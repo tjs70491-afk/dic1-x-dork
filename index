@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>시스템 접속 중...</title>
+</head>
+<body>
+  <h2>인증 정보를 확인하고 있습니다...</h2>
+  <script>
+
+    const GAS_URL = "https://script.google.com/macros/s/여기에_배포된_앱_ID/exec";
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const key = urlParams.get('key');
+
+    if (!key) {
+      document.body.innerHTML = "<h2>접근 불가: 보안 키가 없습니다.</h2>";
+    } else {
+
+      sessionStorage.setItem("APP_KEY", key);
+
+      fetch(`${GAS_URL}?action=verifyKey&key=${key}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === "error") {
+            document.body.innerHTML = `<h2>${res.message}</h2>`;
+            return;
+          }
+          
+          const userType = res.userType;
+          let targetPage = urlParams.get('p') || 'dashboard';
+
+          if (["ADMIN", "helper", "signal", "guest"].includes(userType) && targetPage === 'checklist') {
+            window.location.href = "checklist.html";
+          } else if (["ADMIN", "helper", "SeniorHelperLeader", "field-admin"].includes(userType) && targetPage === 'archive') {
+            window.location.href = "archive.html";
+          } else {
+            window.location.href = "dashboard.html";
+          }
+        })
+        .catch(err => {
+          document.body.innerHTML = "<h2>서버 통신 오류가 발생했습니다.</h2>";
+        });
+    }
+  </script>
+</body>
+</html>
