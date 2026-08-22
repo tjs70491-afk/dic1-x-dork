@@ -2,7 +2,7 @@
 <html>
   <head>
     <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
       /* 전체 기본 설정 */
       body { 
@@ -386,7 +386,7 @@
 
     <script>
 
-      const GAS_URL = "https://script.google.com/macros/s/AKfycbxO3sGYKLwydZAZ6d9phNWDIR-jl8JV4pjQlKCYaLZVR0ExqeoXRM5dDr7udIYRunJe8g/exec";
+      const GAS_URL = "https://script.google.com/macros/s/AKfycbxpTv72O0WaGgGCMAsPeD7wMPtuMM7fNIyQ53iXKqiiGnssEXw-CclhPmyeAYts1XJkKQ/exec";
       const APP_KEY = sessionStorage.getItem("APP_KEY"); // index.html에서 저장한 키
       
       if (!APP_KEY) {
