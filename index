@@ -28,6 +28,9 @@
           }
           
           const userType = res.userType;
+
+          sessionStorage.setItem("USER_TYPE", userType); 
+
           let targetPage = urlParams.get('p') || 'dashboard';
 
           if (["ADMIN", "helper", "signal", "guest"].includes(userType) && targetPage === 'checklist') {
