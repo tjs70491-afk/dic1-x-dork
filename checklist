@@ -311,7 +311,7 @@
         <h1>🚚 2W 간선차량 목록</h1>
         <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
       </div>
-      <button type="button" class="qr-open-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
+      <button type="button" id="qrOpenBtn" class="qr-open-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
         <svg viewBox="0 0 32 32">
           <path fill-rule="evenodd" d="M5 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm0 2h8v8H5V5z"/>
           <rect x="7" y="7" width="4" height="4" rx="1"/>
@@ -386,13 +386,16 @@
 
     <script>
 
-      const GAS_URL = "https://script.google.com/macros/s/여기에_배포된_앱_ID/exec";
+      const GAS_URL = "https://script.google.com/macros/s/AKfycbxO3sGYKLwydZAZ6d9phNWDIR-jl8JV4pjQlKCYaLZVR0ExqeoXRM5dDr7udIYRunJe8g/exec";
       const APP_KEY = sessionStorage.getItem("APP_KEY"); // index.html에서 저장한 키
       
       if (!APP_KEY) {
         alert("인증 정보가 없습니다. 다시 로그인해주세요.");
         window.location.href = "index.html";
       }
+
+      var USER_TYPE = sessionStorage.getItem("USER_TYPE") || "guest";
+      if (USER_TYPE === "guest") document.getElementById('qrOpenBtn').style.display = 'none';
 
       var pendingRequests = 0;
       window.syncInterval = null;
@@ -417,24 +420,24 @@
         var qrErrDetail = document.getElementById('qrErrDetail');
 
         qrImage.sytle.display = 'none';
-        qrErrDetail.sytle.display = 'none';
+        qrErrDetail.style.display = 'none';
 
-        fetch(`${GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
+        fetch(`${GAS_URL}?action=generateGuestLink&key=${APP_KEY}`, { redirect: "follow" })
           .then(response => response.json())
           .then(result => {
             if (result.status === "error") {
               qrInfo.innerText = "❌ 인증 오류"
               qrErrDetail.innerText = result.message;
-              qrErrDetail.sytle.display = 'block';
+              qrErrDetail.style.display = 'block';
               return;
             }
-            qrImage.sytle.display = 'block';
-            qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(result.data);
+            qrImage.style.display = 'block';
+            qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(result.data);
           })
           .catch(error => {
             qrInfo.innerText = "❌ 서버 에러"
             qrErrDetail.innerText = error.message;
-            qrErrDetail.sytle.display = 'block';
+            qrErrDetail.style.display = 'block';
           });
 
         modal.classList.add('active');
