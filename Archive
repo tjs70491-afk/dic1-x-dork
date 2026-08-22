@@ -3,6 +3,9 @@
   <head>
     <base target="_top">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-gov.min.css" />
+    
     <style>
       body { 
         font-family: Roboto, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -474,9 +477,18 @@
 
     </div>
 
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+    <canvas id="watermarkCanvas" style="display: none;"></canvas>
+
+    <div id="uploadOverlay" class="modal" style="display:none; z-index: 9999; flex-direction: column; color: white; font-size: 20px; font-weight: bold;">
+      <div style="margin-bottom: 15px;">⏳ 사진에 워터마크 적용 및 업로드 중...</div>
+      <div style="font-size: 14px; color: #ccc;">잠시만 기다려주세요.</div>
+    </div>
+
     <script>
       const GAS_URL = "https://script.google.com/macros/s/여기에_배포된_앱_ID/exec";
       const APP_KEY = sessionStorage.getItem("APP_KEY");
+      const USER_TYPE = sessionStorage.getItem("USER_TYPE") || "guest";
       
       if (!APP_KEY) {
         alert("인증 정보가 없습니다. 다시 로그인해주세요.");
@@ -484,6 +496,10 @@
       }
 
       window.syncInterval = null;
+
+      let currentUploadCarId = "";
+      let currentUploadCarInfo = "";
+      let currentUploadCarSeq = "";
 
       window.onerror = function(msg, url, line) {
         var statusMsg = document.getElementById('status-msg');
@@ -575,7 +591,15 @@
 
       function showDetail(element) {
         const { carId, info } = element.dataset;
-        const { carInfo, carStatus, selectedImageID, reportRaw } = JSON.parse(decodeURIComponent(info));
+        const { carInfo, carSeq, carStatus, selectedImageID, reportRaw } = JSON.parse(decodeURIComponent(info));
+
+        if (USER_TYPE === "X-mover") {
+          currentUploadCarId = carId;
+          currentUploadCarSeq = carSeq;
+          currentUploadCarInfo = carInfo;
+          document.getElementById('cameraInput').click();
+          return;
+        }
 
         document.getElementById('popTitle').innerText = carInfo;
         document.getElementById('popStatus').innerText = carStatus;
@@ -677,6 +701,135 @@
         if (event.target == modal) {
           modal.style.display = 'none';
         }
+      }
+
+      document.getElementById('cameraInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        document.getElementById('uploadOverlay').style.display = 'flex';
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+            applyWatermarkAndUpload(img);
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      function applyWatermarkAndUpload(img) {
+        const canvas = document.getElementById('watermarkCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const MAX_SIZE = 1920; 
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        if (width > height && width > MAX_SIZE) {
+          height = Math.round(height * (MAX_SIZE / width));
+          width = MAX_SIZE;
+        } else if (height > width && height > MAX_SIZE) {
+          width = Math.round(width * (MAX_SIZE / height));
+          height = MAX_SIZE;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.drawImage(img, 0, 0);
+
+        const now = new Date();
+        const parts = currentUploadCarInfo.split('|').map(s => s.trim());
+        const hub = parts[0] || "";
+        const carNum = parts[1] || "";
+        const carSeq = (hub !== "") ? `${currentUploadCarSeq}호차` : "";
+        const leftText = `${hub}ㅤ${carSeq}`; // 중간에 넓은 공백 특수문자 있음
+        const now = new Date();
+        const dateText = now.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'short'
+          });
+        const timeText = now.toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: true 
+          });
+
+        function drawText(text, x, y, size, align) {
+          ctx.font = `900 ${size}px "Pretendard GOV", sans-serif`;
+          ctx.textAlign = align;
+          ctx.textBaseline = "top";
+          ctx.lineJoin = "round";
+          ctx.miterLimit = 2;
+
+          ctx.lineWidth = size * 0.15;
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+          ctx.strokeText(text, x, y);
+
+          ctx.fillStyle = "white";
+          ctx.fillText(text, x, y);
+        }
+
+        const topMargin = height * 0.03;
+        const sideMargin = width * 0.04;
+        const topFontSize = height * 0.055;
+
+        drawText(leftText, sideMargin, topMargin, topFontSize, "left");
+        drawText(carNum, width - sideMargin, topMargin, topFontSize, "right");
+
+        const timeFontSize = height * 0.16; 
+        ctx.font = `900 ${timeFontSize}px "Pretendard GOV", sans-serif`;
+        const timeWidth = ctx.measureText(timeStr).width;
+        
+        const timeX = width / 2;
+        const timeY = height * 0.80;
+        drawText(timeText, timeX, timeY, timeFontSize, "center");
+
+        const dateFontSize = height * 0.05;
+        const timeStartX = (width / 2) - (timeWidth / 2);
+        const dateY = timeY - (dateFontSize * 1.1);
+        drawText(dateText, timeStartX, dateY, dateFontSize, "left");
+
+        const base64Data = canvas.toDataURL("image/jpeg", 0.8).split(',')[1]; 
+
+        uploadToBackend(base64Data);
+      }
+
+      function uploadToBackend(base64Data) {
+        const payload = {
+          action: "uploadWatermarkImage",
+          key: APP_KEY,
+          carId: currentUploadCarId,
+          carInfo: currentUploadCarInfo,
+          image: base64Data
+        };
+
+        fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(result => {
+          document.getElementById('uploadOverlay').style.display = 'none';
+          document.getElementById('cameraInput').value = ""; // input 초기화
+          
+          if(result.status === "success") {
+            alert("✅ 사진이 성공적으로 업로드 되었습니다.");
+          } else {
+            alert("❌ 업로드 실패: " + result.message);
+          }
+        })
+        .catch(err => {
+          document.getElementById('uploadOverlay').style.display = 'none';
+          document.getElementById('cameraInput').value = "";
+          alert("❌ 네트워크 에러: " + err.message);
+        });
       }
 
       function downloadFile(fileId) {
@@ -869,7 +1022,7 @@
         const freshHubs = new Set(['인천11', '인천15', '부천2', '인천12', '인천22', '곤지암1']);
 
         sheetData.forEach((item) => {
-          const { carId, hub, type, isArrival, wave, selectedImageID, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, reportRaw } = item;
+          const { carId, hub, type, isArrival, wave, selectedImageID, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, reportRaw, seq } = item;
 
           if (hub.includes("부천3") && !isArrival) return; 
 
@@ -929,6 +1082,7 @@
 
           const infoObject = {
             carInfo: carInfo,
+            carSeq: seq,
             carStatus: isArrival 
               ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? unloadingStatus.join(", ") : ""}하차 완료` : ""}` 
               : "미도착",
