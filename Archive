@@ -2,7 +2,7 @@
 <html>
   <head>
     <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-gov.min.css" />
     
@@ -486,7 +486,7 @@
     </div>
 
     <script>
-      const GAS_URL = "https://script.google.com/macros/s/AKfycbxO3sGYKLwydZAZ6d9phNWDIR-jl8JV4pjQlKCYaLZVR0ExqeoXRM5dDr7udIYRunJe8g/exec";
+      const GAS_URL = "https://script.google.com/macros/s/AKfycbxpTv72O0WaGgGCMAsPeD7wMPtuMM7fNIyQ53iXKqiiGnssEXw-CclhPmyeAYts1XJkKQ/exec";
       const APP_KEY = sessionStorage.getItem("APP_KEY");
       const USER_TYPE = sessionStorage.getItem("USER_TYPE") || "guest";
       
