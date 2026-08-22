@@ -8,7 +8,7 @@
   <h2>인증 정보를 확인하고 있습니다...</h2>
   <script>
 
-    const GAS_URL = "https://script.google.com/macros/s/여기에_배포된_앱_ID/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxO3sGYKLwydZAZ6d9phNWDIR-jl8JV4pjQlKCYaLZVR0ExqeoXRM5dDr7udIYRunJe8g/exec";
     
     const urlParams = new URLSearchParams(window.location.search);
     const key = urlParams.get('key');
@@ -34,11 +34,11 @@
           let targetPage = urlParams.get('p') || 'dashboard';
 
           if (["ADMIN", "helper", "signal", "guest"].includes(userType) && targetPage === 'checklist') {
-            window.location.href = "checklist.html";
+            window.location.replace("checklist.html");
           } else if (["ADMIN", "helper", "SeniorHelperLeader", "field-admin"].includes(userType) && targetPage === 'archive') {
-            window.location.href = "archive.html";
+            window.location.replace("archive.html");
           } else {
-            window.location.href = "dashboard.html";
+            window.location.replace(= "dashboard.html");
           }
         })
         .catch(err => {
