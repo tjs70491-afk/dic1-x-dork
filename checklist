@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      /* 전체 기본 설정 */
+      body { 
+        font-family: Roboto, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background-color: #f0f2f5; 
+        margin: 0; 
+        padding: 20px; 
+        color: #333; 
+        height: auto;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        overflow: auto; 
+      }
+      
+      /* 헤더 및 상태 표시 */
+      .header-area { 
+        position: relative;
+        display: flex; 
+        justify-content: center; /* title-wrap을 화면 정중앙에 배치 */
+        align-items: center; 
+        margin-bottom: 20px; 
+        flex-shrink: 0;
+        width: 100%;
+      }
+      h1 { 
+        margin: 0; 
+        font-size: clamp(22px, 3vh, 32px); 
+        color: #1a73e8; 
+      }
+      .status-text { 
+        font-size: clamp(13px, 1.8vh, 16px); 
+        color: #666; 
+        background: #e1f3f4; 
+        padding: 4px 12px; 
+        border-radius: 20px; 
+      }
+
+      /* 아이콘 공통 크기 */
+      .icon-svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        overflow: visible;
+      }
+
+      /* 타이틀 및 QR 버튼 래퍼 */
+      .title-wrap {
+        display: flex;
+        flex-direction: column; /* 세로 배치 */
+        align-items: center;    /* 세로 기준 가운데 정렬 */
+        gap: 8px;              /* h1과 상태메시지 간격 */
+        text-align: center;
+      }
+
+      /* 세로 배치(모바일) 레이아웃 */
+      .main-container { 
+        display: flex; 
+        gap: 20px; 
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: visible; 
+      }
+      
+      /* 상단 패널 */
+      .top-panel { flex: auto; width: 100%; min-width: 300px; display: flex; flex-direction: column; gap: 20px; }
+      
+      /* 하단 패널 */
+      .bottom-panel { flex: auto; width: 100%; min-width: 300px; height: 100%; display: flex; flex-direction: column; }
+
+      /* 카드 공통 디자인 */
+      .card { 
+        background: white; 
+        padding: 25px; 
+        border-radius: 16px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+      }
+      h2 { margin-top: 0; color: #202124; font-size: clamp(20px, 3vh, 35px); margin-bottom: 20px; flex-shrink: 0; }
+
+      .bottom-panel .card {
+        flex: auto;
+        display: flex;
+        flex-direction: column;
+        min-height: auto;
+      }
+
+      .remain {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        width: 100%;
+      }
+
+      .remainItem {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        min-height: 120px;
+        background: #fee7d0;
+        border-radius: 8px;
+      }
+
+      .remainItem h2 {
+        margin-bottom: 5px;
+      }
+      .remainItem span {
+        font-weight: bold;
+        font-size: 50px;
+      }
+
+      .cluster-item, .pico-item {
+        margin-top: 15px;
+        background: #e8f0fe;
+        border-radius: 8px;
+      }
+
+      .cluster-info > h2, .pico-info > h2 {
+        padding: 5px 10px;
+        margin: 0;
+      }
+
+      #pico-list, #cluster-list { 
+        display: block;
+        white-space: pre-wrap;
+        justify-content: space-between; 
+        padding: 5px 10px;
+        font-weight: bold; 
+        font-size: clamp(30px, 4vh, 50px); 
+        white-space: pre-line;
+        align-items: center;
+        text-align: center;
+      }
+
+      #searchInput { font-size: clamp(20px, 2.5vh, 30px); padding: 5px 15px; width: 100%; box-sizing: border-box;}
+
+      /* 리스트 디자인 */
+      .list-container { 
+        flex: 1; 
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; 
+        overflow-y: visible; 
+        padding-bottom: 5px;
+        scrollbar-width: none; 
+      }
+      .list-container::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+      }
+      .list-inner {
+        display: inline-flex; 
+        flex-direction: column;
+        min-width: 100%;
+        gap: 12px;
+        padding-right: 5px;
+      }
+      .list-item { 
+        padding: 12px 15px;
+        display: flex; 
+        justify-content: space-between;
+        border-radius: 8px;
+        transition: background 0.2s;
+        background: #e8f0fe;
+        align-items: center;
+      }
+      .list-item.waiting { background: #fee7d0; }
+      .list-item.unloaded { background: #e6f4ea; }
+      .list-item:hover { background: #e1f3f4; }
+      .car-info { 
+        font-size: clamp(20px, 4.2vw, 26px); 
+        margin: 0px 16px; 
+        font-weight: 600; 
+        white-space: nowrap; 
+        flex: 1; 
+        text-align: left;
+        display: flex;
+        align-items: center;
+      }
+      
+      /* 상태별 뱃지 디자인 */
+      .badge { 
+          padding: 6px 14px; 
+          border-radius: 12px; 
+          font-size: clamp(12px, 2.8vw, 15px); 
+          font-weight: bold; 
+          white-space: nowrap; 
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          line-height: 1; 
+          flex-shrink: 0;
+      }
+      .badge.unloaded { background: #e6f4ea; color: #137333; }
+      .badge.waiting { background: #fef7e0; color: #b06000; }
+      .badge.not-arrived { background: #f2f4f5; color: #5f6368; }
+      .text-unloaded { text-decoration: line-through; color: #9aa0a6; }
+
+      .checkBox { 
+        width: clamp(28px, 6vw, 34px);
+        height: clamp(28px, 6vw, 34px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+        margin: 0;
+        flex-shrink: 0; 
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        outline: none;
+      }
+
+      .checkBox:disabled {
+        cursor: not-allowed;
+      }
+
+      /* QR 버튼 스타일 */
+      .qr-open-btn {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%); /* 버튼 높이 기준 수직 정중앙 정렬 */
+        
+        background: white;
+        border: 1px solid #cce0ff;
+        border-radius: 8px;
+        padding: 6px 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+      .qr-open-btn:hover {
+        background: #e8f0fe;
+        border-color: #1a73e8;
+      }
+      .qr-open-btn svg {
+        width: 24px;
+        height: 24px;
+        fill: #1a73e8;
+      }
+
+      /* 모달 팝업 */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(2px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+        padding: 20px;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      .modal-content {
+        background: white;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        text-align: center;
+        max-width: 280px;
+        width: 100%;
+        animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      @keyframes popIn {
+        from { transform: scale(0.85); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      .modal-content h3 { margin: 0 0 8px 0; font-size: 18px; color: #202124; }
+      .modal-content p { margin: 0; font-size: 13px; color: #666; }
+      .qr-img {
+        width: 180px;
+        height: 180px;
+        margin: 15px auto;
+        display: block;
+        border-radius: 8px;
+        border: 1px solid #f0f0f0;
+      }
+      .close-btn {
+        background: #f1f3f4;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        font-weight: bold;
+        color: #3c4043;
+        cursor: pointer;
+        width: 100%;
+        transition: background 0.2s;
+      }
+      .close-btn:hover { background: #e8eaed; }
+    </style>
+  </head>
+  <body>
+    <div class="header-area">
+      <div class="title-wrap">
+        <h1>🚚 2W 간선차량 목록</h1>
+        <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
+      </div>
+      <button type="button" class="qr-open-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
+        <svg viewBox="0 0 32 32">
+          <path fill-rule="evenodd" d="M5 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm0 2h8v8H5V5z"/>
+          <rect x="7" y="7" width="4" height="4" rx="1"/>
+          <path fill-rule="evenodd" d="M19 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-8zm0 2h8v8h-8V5z"/>
+          <rect x="21" y="7" width="4" height="4" rx="1"/>
+          <path fill-rule="evenodd" d="M5 17a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H5zm0 2h8v8H5v-8z"/>
+          <rect x="7" y="21" width="4" height="4" rx="1"/>
+          <path fill-rule="evenodd" d="M19 17a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8zm0 2h8v8h-8v-8z"/>
+          <rect x="22" y="22" width="2" height="2" rx="0.5"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="main-container">
+      <div class="top-panel">
+        <div class="card">
+          <div class="remain">
+            <div class="remainItem">
+              <div class="remain-info">
+                <h2>1W 남은 차량</h2>
+                <span id="remain1W-count">0</span>
+              </div>
+            </div>
+            <div class="remainItem">
+              <div class="remain-info">
+                <h2>2W 남은 차량</h2>
+                <span id="remain2W-count">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cluster-item">
+            <div class="cluster-info">
+              <h2>클러스터 차량번호</h2>
+              <div id="cluster-list"></div>
+            </div>
+          </div>
+
+          <div class="pico-item">
+            <div class="pico-info">
+              <h2>피코 차량번호</h2>
+              <div id="pico-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="middle-panel">
+        <div class="card">
+          <h2>🔎 차량 검색</h2>
+          <input type="text" id="searchInput" onkeyup="filterList()" placeholder="차량번호를 입력하세요...">
+        </div>
+      </div>
+
+      <div class="bottom-panel">
+        <div class="card">
+          <h2 id="list-title">📋 실시간 차량 목록</h2>
+          <div class="list-container" id="full-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="qrModal" class="modal-overlay" onclick="closeQrModalOnOutside(event)">
+      <div class="modal-content">
+        <h3>📱 모바일 접속 QR</h3>
+        <p id="qrInfo">스마트폰 카메라로 스캔하세요</p>
+        <p style="display: none;" id="qrErrDetail">에러 내용</p>
+        <img id="qrImage" class="qr-img" src="" alt="접속 QR코드">
+        <button type="button" class="close-btn" onclick="closeQrModal()">닫기</button>
+      </div>
+    </div>
+
+    <script>
+
+      const GAS_URL = "https://script.google.com/macros/s/여기에_배포된_앱_ID/exec";
+      const APP_KEY = sessionStorage.getItem("APP_KEY"); // index.html에서 저장한 키
+      
+      if (!APP_KEY) {
+        alert("인증 정보가 없습니다. 다시 로그인해주세요.");
+        window.location.href = "index.html";
+      }
+
+      var pendingRequests = 0;
+      window.syncInterval = null;
+
+      var ICONS = {
+        empty: '<svg class="icon-svg" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="4" stroke="#b0bec5" stroke-width="2" fill="none"/></svg>',
+        checked: '<svg class="icon-svg" viewBox="0 0 24 24" fill="none"><path d="M5.5 13.5L9.5 17.5L18.5 8.5" stroke="#2e7d32" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        doubleChecked: '<svg class="icon-svg" viewBox="0 0 24 24" fill="none"><path d="M7 8.5L10.5 12L17.5 5" stroke="#2e7d32" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 15L9.5 20L19.5 10" stroke="#2e7d32" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      };
+
+      window.onerror = function(msg, url, line) {
+        var statusMsg = document.getElementById('status-msg');
+        if (statusMsg) {
+          statusMsg.innerHTML = "<strong style='color:red;'>에러: " + msg + " (" + line + "줄)</strong>";
+        }
+      };
+
+      function openQrModal() {
+        var modal = document.getElementById('qrModal');
+        var qrInfo = document.getElementById('qrInfo');
+        var qrImage = document.getElementById('qrImage');
+        var qrErrDetail = document.getElementById('qrErrDetail');
+
+        qrImage.sytle.display = 'none';
+        qrErrDetail.sytle.display = 'none';
+
+        fetch(`${GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
+          .then(response => response.json())
+          .then(result => {
+            if (result.status === "error") {
+              qrInfo.innerText = "❌ 인증 오류"
+              qrErrDetail.innerText = result.message;
+              qrErrDetail.sytle.display = 'block';
+              return;
+            }
+            qrImage.sytle.display = 'block';
+            qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(result.data);
+          })
+          .catch(error => {
+            qrInfo.innerText = "❌ 서버 에러"
+            qrErrDetail.innerText = error.message;
+            qrErrDetail.sytle.display = 'block';
+          });
+
+        modal.classList.add('active');
+      }
+
+      function closeQrModal() {
+        var modal = document.getElementById('qrModal');
+        modal.classList.remove('active');
+      }
+
+      function closeQrModalOnOutside(event) {
+        if (event.target.id === 'qrModal') {
+          closeQrModal();
+        }
+      }
+
+      function filterList() {
+        var searchInput = document.getElementById('searchInput').value;
+        var query = searchInput.toLowerCase().trim();
+        var listInner = document.getElementById('list-inner');
+        if (!listInner) return;
+
+        var items = listInner.querySelectorAll('.list-item:not(#noResultItem)');
+        var listTitle = document.getElementById('list-title');
+
+        if (query === '') {
+          listTitle.innerText = '📋 전체 차량 목록';
+        } else {
+          listTitle.innerText = '🔎 검색 차량 목록';
+        }
+
+        var visibleCount = 0;
+        items.forEach(function(item) {
+          var text = item.textContent.toLowerCase();
+          if (text.includes(query)) {
+            item.style.display = 'flex';
+            visibleCount++;
+          } else {
+            item.style.display = 'none';
+          }
+        });
+
+        var noResultEl = document.getElementById('noResultItem');
+        if (visibleCount === 0) {
+          if (!noResultEl) {
+            noResultEl = document.createElement('div');
+            noResultEl.id = 'noResultItem';
+            noResultEl.className = 'list-item';
+            noResultEl.style.cursor = 'default';
+            noResultEl.style.justifyContent = 'center';
+            noResultEl.innerHTML = '<span class="car-info" style="text-align: center; color: #888; margin: 0;"><small>🔍❓ 일치하는 검색 결과가 없습니다.</small></span>';
+            listInner.appendChild(noResultEl);
+          } else {
+            noResultEl.style.display = 'flex';
+          }
+        } else {
+          if (noResultEl) {
+            noResultEl.style.display = 'none';
+          }
+        }
+      }
+
+      function markAsArrived(rowIdx, btnElement) {
+        btnElement.disabled = true;
+
+        var listInner = document.getElementById('list-inner');
+        var listItem = btnElement.closest('.list-item');
+        var isAlreadyWaiting = listItem.classList.contains('waiting');
+
+        var wave = listItem.getAttribute('data-wave');
+        var isBucheon = listItem.getAttribute('data-bucheon') === 'true';
+
+        if (!isAlreadyWaiting) { 
+          btnElement.innerHTML = ICONS.checked;
+          listItem.classList.remove('not-arrived');
+          listItem.classList.add('waiting');
+          
+          var firstUnloaded = listInner.querySelector('.list-item.unloaded');
+          if (firstUnloaded) {
+            listInner.insertBefore(listItem, firstUnloaded);
+          } else {
+            listInner.appendChild(listItem);
+          }
+
+          if (!isBucheon) updateRemainCount(wave, -1);
+        } else {
+          btnElement.innerHTML = ICONS.empty;
+          listItem.classList.remove('waiting');
+          listItem.classList.add('not-arrived');
+
+          var notArrivedItems = Array.from(listInner.querySelectorAll('.list-item.not-arrived'))
+            .filter(function(item) { return item !== listItem; });
+
+          var nextItem = notArrivedItems.find(function(item) {
+            return Number(item.getAttribute('data-row-idx')) > Number(rowIdx);
+          });
+
+          if (nextItem) {
+            listInner.insertBefore(listItem, nextItem);
+          } else {
+            var nextGroupFirstItem = listInner.querySelector('.list-item.waiting, .list-item.unloaded');
+            if (nextGroupFirstItem) {
+              listInner.insertBefore(listItem, nextGroupFirstItem);
+            } else {
+              listInner.appendChild(listItem);
+            }
+          }
+          if (!isBucheon) updateRemainCount(wave, 1);
+        }
+
+        filterList();
+        stopSyncInterval();
+        pendingRequests++;
+
+        fetch(`${GAS_URL}?action=toggleCheck&key=${APP_KEY}&rowIdx=${rowIdx}`, { redirect: "follow" })
+          .then(res => res.json())
+          .then(result => {
+            btnElement.disabled = false;
+            pendingRequests--;
+            if (result.status === "error" || !result.result.success) {
+              alert(result.message || result.result.message);
+              fetchData();
+            }
+            if (pendingRequests === 0) checkWorkTimeAndSync();
+          })
+          .catch(err => {
+            btnElement.disabled = false;
+            pendingRequests--;
+            alert("네트워크 연결 오류. 원래 상태로 복구합니다.");
+            fetchData();
+            if (pendingRequests === 0) checkWorkTimeAndSync();
+          });
+      }
+
+      function updateRemainCount(wave, delta) {
+        var countElId = (wave === "1W") ? 'remain1W-count' : 'remain2W-count';
+        var countEl = document.getElementById(countElId);
+        if (countEl) {
+          var currentVal = parseInt(countEl.innerText, 10) || 0;
+          countEl.innerText = Math.max(0, currentVal + delta);
+        }
+      }
+
+      function checkWorkTimeAndSync() {
+        fetchData();
+        stopSyncInterval();
+
+        if (document.hidden) return;
+
+        var searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value.trim().length > 0) return;
+        
+        window.syncInterval = setInterval(function() {
+          var currentHour = new Date().getHours();
+          if (currentHour < 10) {
+            if (document.getElementById('searchInput').value.trim().length === 0) {
+              fetchData();
+            }
+          } else {
+            document.getElementById('status-msg').innerText = "⏹️ 2W 근무 종료.. 자동 동기화 중지";
+            stopSyncInterval();
+          }
+        }, 10000);
+      }
+
+      function stopSyncInterval() {
+        if (window.syncInterval) {
+          clearInterval(window.syncInterval);
+          window.syncInterval = null;
+        }
+      }
+
+      function fetchData() {
+        document.getElementById('status-msg').innerText = "데이터 동기화 중...";
+      
+        fetch(`${GAS_URL}?action=getChecklistData&key=${APP_KEY}`, { redirect: "follow" })
+          .then(response => response.json())
+          .then(result => {
+            if (result.status === "error") {
+              document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
+              return;
+            }
+            updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
+          })
+          .catch(error => {
+            document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
+          });
+      }
+
+      function updateUI(data) {
+        var now = new Date();
+        var timeStr = [
+          String(now.getHours()).padStart(2, '0'),
+          String(now.getMinutes()).padStart(2, '0'),
+          String(now.getSeconds()).padStart(2, '0')
+        ].join(':');
+        document.getElementById('status-msg').innerText = "✅ 마지막 업데이트: " + timeStr;
+
+        var isNotBucheon = function(hub) { return !String(hub).includes("부천3"); };
+        var wave = function(carId) { return String(carId).substr(0, 2); };
+
+        var dataSummary = (data || []).reduce(function(acc, item) {
+          var cId = item.cId, hub = item.hub, carN = item.carN, arr = item.arr;
+
+          if (wave(cId) === "1W") {
+            if (isNotBucheon(hub)) {
+              acc.max1WLength++;
+              if (arr) acc.arrival1WLength++;
+            } else {
+              acc.picoCarNumbers.push(carN);
+            }
+          } 
+          if (wave(cId) === "2W") {
+            if (isNotBucheon(hub)) {
+              acc.max2WLength++;
+              if (arr) acc.arrival2WLength++;
+            } else {
+              acc.clusterCarNumbers.push(carN);
+            }
+          }
+          return acc;
+        }, {
+          max1WLength: 0, arrival1WLength: 0,
+          max2WLength: 0, arrival2WLength: 0,
+          picoCarNumbers: [], clusterCarNumbers: []
+        });
+
+        document.getElementById('pico-list').innerText = Array.from(new Set(dataSummary.picoCarNumbers)).join('\n');
+        document.getElementById('cluster-list').innerText = Array.from(new Set(dataSummary.clusterCarNumbers)).join('\n');
+
+        document.getElementById('remain1W-count').innerText = dataSummary.max1WLength - dataSummary.arrival1WLength;
+        document.getElementById('remain2W-count').innerText = dataSummary.max2WLength - dataSummary.arrival2WLength;
+
+        var listContainer = document.getElementById('full-list');
+        listContainer.innerHTML = '<div class="list-inner" id="list-inner"></div>'; 
+        var listInner = document.getElementById('list-inner'); 
+
+        var getPriority = function(item) {
+          if (item.arr && !item.unl) return 2; 
+          if (!item.arr) return 1;                    
+          return 3;                                         
+        };
+
+        var sortedData = (data || []).slice().sort(function(a, b) {
+          var priorityA = getPriority(a);
+          var priorityB = getPriority(b);
+          if (priorityA !== priorityB) return priorityA - priorityB;
+          if (priorityA === 2 && a.aTime && b.aTime) {
+            return a.aTime - b.aTime; 
+          }
+          return 0;
+        });
+
+        var freshHubs = new Set(['인천11', '인천15', '부천2', '인천12', '인천22', '곤지암1']);
+
+        sortedData.forEach(function(item) {
+          var cId = item.cId, rIdx = item.rIdx, hub = item.hub, carN = item.carN, arr = item.arr, unl = item.unl;
+
+          if (String(hub).includes("부천3") && !arr) return;
+
+          var badgeClass = "not-arrived";
+          var checkIcon = ICONS.empty;
+
+          if (unl) {
+            badgeClass = "unloaded";
+            checkIcon = ICONS.doubleChecked;
+          } else if (arr) {
+            badgeClass = "waiting";
+            checkIcon = ICONS.checked;
+          }
+
+          var prefix = "";
+          if (wave(cId) === "1W") {
+            prefix = "★";
+          } else if (freshHubs.has(hub)) {
+            prefix = "◇";
+          }
+
+          var hubMap = { "부천3": "클러스터", "광주": "경기광주1" };
+          var hubStr = hubMap[hub] || hub;
+          var carInfo = escapeHtml(prefix + hubStr + " | " + carN);
+          var itemWave = wave(cId);
+          var isBucheon = String(hub).includes("부천3");
+
+          var listItemHTML = 
+            '<div class="list-item ' + badgeClass + '" data-row-idx="' + rIdx + '" data-wave="' + itemWave + '" data-bucheon="' + isBucheon + '">' +
+              '<button onclick="markAsArrived(' + rIdx + ', this)" class="checkBox" ' + (unl ? 'disabled' : '') + '>' +
+                checkIcon +
+              '</button>' +
+              '<span class="car-info ' + (unl ? "text-unloaded" : "") + '">' + carInfo + '</span>' +
+            '</div>';
+          
+          listInner.insertAdjacentHTML('beforeend', listItemHTML);
+        });
+
+        filterList();
+      }
+
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(checkWorkTimeAndSync, 500);
+      });
+
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+          stopSyncInterval();
+          var searchInput = document.getElementById('searchInput');
+          if (searchInput) searchInput.value = "";
+        } else {
+          checkWorkTimeAndSync(); 
+        }
+      });
+    </script>
+  </body>
+</html>
