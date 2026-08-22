@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body { 
+        font-family: Roboto, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background-color: #f0f2f5; 
+        margin: 0; 
+        padding: 20px; 
+        color: #333; 
+        height: 100vh;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      
+      .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
+      h1 { margin: 0; font-size: clamp(32px, 4vh, 50px); color: #1a73e8; }
+      .status-text { font-size: clamp(16px, 2vh, 25px); color: #666; background: #e1f3f4; padding: 5px 15px; border-radius: 20px; }
+
+      .main-container { 
+        display: flex; 
+        gap: 20px; 
+        flex: 1; 
+        min-height: 0; 
+      }
+      
+      .left-panel { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 20px; }
+      
+      .right-panel { flex: 1.5; min-width: 300px; height: 100%; display: flex; flex-direction: column; gap: 20px; }
+
+      .card { 
+        background: white; 
+        padding: 25px; 
+        border-radius: 16px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+      }
+      h2 { margin-top: 0; color: #202124; font-size: clamp(20px, 3vh, 40px); margin-bottom: 20px; flex-shrink: 0; }
+
+      .search-card {
+        padding: 15px 25px;
+        flex-shrink: 0;
+      }
+      .search-card h2 {
+        margin-bottom: 10px;
+        font-size: clamp(18px, 2.5vh, 28px);
+      }
+      #searchInput { 
+        font-size: clamp(18px, 2.2vh, 24px); 
+        padding: 8px 15px; 
+        width: 100%; 
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        outline: none;
+      }
+      #searchInput:focus {
+        border-color: #1a73e8;
+      }
+      .quick-filter-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .filter-btn {
+        background-color: #f1f3f4;
+        border: 1px solid #dadce0;
+        border-radius: 16px;
+        padding: 6px 14px;
+        font-size: clamp(13px, 1.6vh, 16px);
+        font-weight: 500;
+        color: #3c4043;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+      }
+
+      .filter-btn:hover {
+        background-color: #e8f0fe;
+        color: #1a73e8;
+        border-color: #d2e3fc;
+      }
+
+      .filter-btn.active {
+        background-color: #1a73e8;
+        color: white;
+        border-color: #1a73e8;
+      }
+
+      .filter-btn.reset-btn {
+        background-color: #fce8e6;
+        color: #c5221f;
+        border-color: #fad2cf;
+      }
+      .filter-btn.reset-btn:hover {
+        background-color: #f8bb86;
+      }
+
+      .list-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .huge-remaining-box { 
+        text-align: center; 
+        padding: clamp(10px, 2vh, 20px) 0; 
+        flex-shrink: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 0;
+      }
+      .huge-title { font-size: clamp(20px, 3vh, 40px); font-weight: bold; }
+      .huge-number { font-size: clamp(100px, 20vh, 200px); font-weight: 900; line-height: 0.8; flex-shrink: 0; }
+      .huge-desc { font-size: clamp(16px, 2vh, 25px); color: #666; }
+      .type-inner { 
+        font-size: clamp(20px, 4vh, 40px); 
+        font-weight: bold; 
+        display: flex;
+        flex-direction: row;
+        justify-content: space-evenly;
+        align-items: center;
+      }
+
+      .progress-item { margin-bottom: 20px; }
+      .progress-item:last-child { margin-bottom: 0; }
+      .progress-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; font-size: clamp(20px, 3vh, 40px); }
+      .progress-track { background: #e0e0e0; border-radius: 10px; height: 18px; width: 100%; overflow: hidden; }
+      .progress-fill { height: 100%; width: 0%; border-radius: 10px; transition: width 0.8s ease-in-out; }
+
+      .list-container { 
+        flex: 1; 
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; 
+        overflow-y: visible; 
+        padding-bottom: 5px;
+        scrollbar-width: none; 
+      }
+      .list-container::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+      }
+      .list-inner {
+        display: inline-flex; 
+        flex-direction: column;
+        min-width: 100%;
+        gap: 12px;
+        padding-right: 5px;
+      }
+      .list-item { 
+        padding: 10px 20px;
+        display: flex; 
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 8px;
+        transition: background 0.2s;
+        background: #e8f0fe;
+        cursor: pointer;
+      }
+      .list-item.unloaded { background: #e6f4ea; }
+      .list-item.waiting { background: #fee7d0; }
+      .list-item:hover { background: #e1f3f4; }
+
+      .type { 
+        flex-basis: 10%;
+        max-width: 10%; 
+        padding: 0; 
+        font-size: clamp(18px, 2.5vh, 35px); 
+        font-weight: bold; 
+        white-space: nowrap; 
+        flex-shrink: 0; 
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .type small {
+        display: inline-block;
+        padding: 6px 14px;
+        box-sizing: border-box;
+      }
+      .type.sioc small { background: #C19A6C; color: #1A130B; border-radius: 0px; border: 2px solid #3A2E2B; }
+      .type.pb small { background: #A1B4C4; color: black; border-radius: 5px; border: 2px solid #B0C2D2; }
+      .type.fresh small { background: #1E3264; color: white; border-radius: 5px; border: 4px solid #0E6641; }
+      .type.irr small { 
+        background: rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: #1f2937; 
+        border-radius: 999px;
+        border:1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
+      }
+
+      .car-info { 
+        flex-basis: 80%;
+        max-width: 80%; 
+        font-size: clamp(20px, 4vh, 50px); 
+        font-weight: 600; 
+        margin: 0px 16px; 
+        white-space: nowrap; 
+        flex: 1; 
+        text-align: left; 
+      }
+      
+      .badge { 
+        flex-basis: 10%;
+        max-width: 10%;
+        padding: 0; 
+        font-size: clamp(18px, 2.5vh, 35px); 
+        font-weight: bold; 
+        white-space: nowrap; 
+        flex-shrink: 0; 
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .badge small {
+        display: inline-block;
+        border-radius: 12px; 
+        padding: 6px 14px;
+        box-sizing: border-box;
+      }
+      .badge.unloaded small { background: #d6e4da; color: #137333; }
+      .badge.waiting small { background: #eee7d0; color: #b06000; }
+      .badge.not-arrived small { background: #f2f4f5; color: #5f6368; }
+      .text-unloaded small { text-decoration: line-through; color: #9aa0a6; }
+
+      .modal { 
+        display: none; 
+        position: fixed; 
+        z-index: 1000; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(0,0,0,0.6); 
+        
+        justify-content: center;
+        align-items: center;
+        padding: 50px 20px 20px 20px;
+        box-sizing: border-box;
+      }
+
+      .modal-content { 
+        background: white; 
+        width: 100%; 
+        max-width: 500px; 
+        margin: 0 auto;
+        padding: 25px; 
+        border-radius: 12px; 
+        position: relative; 
+        box-sizing: border-box;
+        
+        max-height: 85vh; 
+        overflow-y: auto; 
+        -webkit-overflow-scrolling: touch;
+      }
+      .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
+      #popStatus { background: #f9f9f9; padding: 12px; border-radius: 6px; margin: 15px 0; white-space: pre-wrap; font-size: 14px; }
+
+      .main-image-zone {
+        position: relative;
+        width: 100%;
+        height: clamp(180px, 25vh, 300px);
+        margin: 12px 0;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #f9fafb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .img-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      .img-wrapper:has(.main-preview-img:not([style*="display: none"])) {
+        cursor: pointer;
+      }
+
+      .img-wrapper:has(.main-preview-img:not([style*="display: none"]))::after {
+        content: '⬇️'; 
+        position: absolute; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%); 
+        font-size: 25px; 
+        opacity: 0; 
+        pointer-events: none; 
+        transition: opacity 0.2s;
+      }
+
+      .img-wrapper:has(.main-preview-img:not([style*="display: none"])):hover::after { 
+        opacity: 0.8; 
+      }
+
+      .main-preview-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      #noPreviewText {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        text-align: center;
+        color: #aaa;
+        font-size: 14px;
+        pointer-events: none;
+      }
+
+      .thumbnail-zone { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+      .thumb-wrapper { position: relative; width: 70px; height: 70px; cursor: pointer; }
+      .thumb-img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+      
+      .thumb-wrapper.active .thumb-img,
+      .thumb-wrapper:hover .thumb-img { border-color: #007bff; opacity: 0.8; }
+
+      .loading { text-align: center; color: #666; }
+
+      @media (max-width: 768px) {
+        body {
+          height: auto;
+          overflow: auto;
+        }
+        .header-area {
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 15px;
+        }
+        .status-text {
+          align-self: center;
+          font-size: clamp(14px, 3.5vw, 18px);
+        }
+        .main-container { 
+          flex-direction: column; 
+          overflow: visible; 
+        }
+        .left-panel, .right-panel { 
+          width: 100%; 
+          flex: auto; 
+        }
+        .list-card {
+          flex: auto;
+          min-height: auto;
+        }
+        .list-container {
+          overflow-y: visible;
+        }
+        .list-item { 
+          padding: 12px 10px;
+        }
+        .type, .badge {
+          display: none;
+        }
+        .car-info { font-size: clamp(22px, 4.6vw, 28px); }
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div class="header-area">
+      <h1>🚚 2W 간선 하차 현황</h1>
+      <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
+    </div>
+
+    <div class="main-container">
+      <div class="left-panel">
+        <div class="card huge-remaining-box">
+          <div class="huge-title" id="total-title">총 남은 하차 대수</div>
+          <div class="huge-number" id="total-remaining">0</div>
+          <div class="type-inner">
+            <span id="type-text1">SIOC : 0</span><span id="type-text2">PB : 0</span><span id="type-text3">이형 : 0</span>
+          </div>
+          <div class="huge-desc">접안 및 대기 차량 포함</div>
+        </div>
+
+        <div class="card">
+          <h2>📊 하차 진행률</h2>
+          
+          <div class="progress-item">
+            <div class="progress-info">
+              <span>1W 간선 (1시 이후)</span>
+              <span id="1w-text">0 / 0</span>
+            </div>
+            <div class="progress-track"><div id="1w-fill" class="progress-fill" style="background-color: #1a73e8;"></div></div>
+          </div>
+
+          <div class="progress-item">
+            <div class="progress-info">
+              <span>2W 간선</span>
+              <span id="2w-text">0 / 0</span>
+            </div>
+            <div class="progress-track"><div id="2w-fill" class="progress-fill" style="background-color: #34a853;"></div></div>
+          </div>
+
+          <div class="progress-item">
+            <div class="progress-info">
+              <span>★ SF부천3 (Pico)</span>
+              <span id="pico-text">0 / 0</span>
+            </div>
+          </div>
+
+          <div class="progress-item">
+            <div class="progress-info">
+              <span>◇ 부천3 (클러스터)</span>
+              <span id="cluster-text">0 / 0</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="right-panel">
+        
+        <div class="card search-card">
+          <h2>🔎 차량 검색</h2>
+          <input type="text" id="searchInput" onkeyup="filterList()" value="🖼️" placeholder="차량번호 또는 허브명을 입력하세요...">
+          <div class="quick-filter-container">
+            <button type="button" class="filter-btn active" onclick="applyQuickFilter('🖼️')">🖼️ 사진</button>
+            <button type="button" class="filter-btn" onclick="applyQuickFilter('PB')">PB</button>
+            <button type="button" class="filter-btn" onclick="applyQuickFilter('SIOC')">SIOC</button>
+            <button type="button" class="filter-btn" onclick="applyQuickFilter('신선')">신선</button>
+            <button type="button" class="filter-btn" onclick="applyQuickFilter('이형')">이형</button>
+            <button type="button" class="filter-btn" onclick="applyQuickFilter('대기중')">대기중</button>
+            <button type="button" class="filter-btn" onclick="applyQuickFilter('미도착')">미도착</button>
+            <button type="button" class="filter-btn reset-btn" onclick="applyQuickFilter('')">초기화</button>
+          </div>
+        </div>
+
+        <div class="card list-card">
+          <h2 id="list-title">📋 전체 차량 목록</h2>
+          <div class="list-container" id="full-list">
+            <!-- 리스트 생성 -->
+          </div>
+        </div>
+
+      </div>
+
+      <div id="detailModal" class="modal" style="display:none;">
+        <div class="modal-content">
+          <span class="close-btn" onclick="closeModal()">&times;</span>
+          <h3 id="popTitle">차량 정보</h3>
+          <div id="popStatus">차량 상태</div>
+          <div id="popReportRaw">하차보고 내용</div>
+
+          <h4>차량 사진</h4>
+          <div class="main-image-zone" id="mainImageZone">
+            <div class="img-wrapper">
+              <img id="mainImage" class="main-preview-img" src="" alt="미리보기 이미지" style="display: none;">
+            </div>
+            <span id="noPreviewText" style="color: #aaa; font-size: 14px;">섬네일을 클릭해 다운로드할 이미지를 선택하세요.</span>
+          </div>
+          <div id="thumbnailContainer" class="thumbnail-zone"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <script>
+      const GAS_URL = "https://script.google.com/macros/s/여기에_배포된_앱_ID/exec";
+      const APP_KEY = sessionStorage.getItem("APP_KEY");
+      
+      if (!APP_KEY) {
+        alert("인증 정보가 없습니다. 다시 로그인해주세요.");
+        window.location.href = "index.html";
+      }
+
+      window.syncInterval = null;
+
+      window.onerror = function(msg, url, line) {
+        var statusMsg = document.getElementById('status-msg');
+        if(statusMsg) {
+          statusMsg.innerHTML = "<strong style='color:red;'>에러: " + msg + " (" + line + "줄)</strong>";
+        }
+      };
+
+      function applyQuickFilter(keyword) {
+        const searchInput = document.getElementById('searchInput');
+        const buttons = document.querySelectorAll('.filter-btn');
+
+        if (searchInput.value === keyword || keyword === '') {
+          searchInput.value = '';
+          buttons.forEach(btn => btn.classList.remove('active'));
+        } else {
+          searchInput.value = keyword;
+          
+          buttons.forEach(btn => {
+            if (btn.innerText.includes(keyword)) {
+              btn.classList.add('active');
+            } else {
+              btn.classList.remove('active');
+            }
+          });
+        }
+
+        filterList();
+      }
+
+      function filterList() {
+        const searchInput = document.getElementById('searchInput').value;
+        const query = searchInput.toLowerCase().trim();
+        const listInner = document.getElementById('list-inner');
+        if (!listInner) return;
+
+        const items = listInner.querySelectorAll('.list-item:not(#noResultItem)');
+        const buttons = document.querySelectorAll('.filter-btn');
+        const listTitle = document.getElementById('list-title');
+
+        if (query === '') {
+          listTitle.innerText = `📋 전체 차량 목록`;
+        } else {
+          listTitle.innerText = `🔎 검색 차량 목록`;
+        }
+
+        buttons.forEach(btn => {
+          if (query !== '' && btn.innerText.toLowerCase().includes(query)) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+
+        let visibleCount = 0;
+        items.forEach(item => {
+          const text = item.textContent.toLowerCase();
+          if (text.includes(query)) {
+            item.style.display = 'flex';
+            visibleCount++;
+          } else {
+            item.style.display = 'none';
+          }
+        });
+
+        let noResultEl = document.getElementById('noResultItem');
+        if (visibleCount === 0) {
+          if (!noResultEl) {
+            noResultEl = document.createElement('div');
+            noResultEl.id = 'noResultItem';
+            noResultEl.className = 'list-item';
+            noResultEl.style.cursor = 'default';
+            noResultEl.style.justifyContent = 'center';
+            noResultEl.innerHTML = `
+              <span class="car-info" style="text-align: center; color: #888; margin: 0;">
+                <small>🔍❓ 일치하는 검색 결과가 없습니다.</small>
+              </span>
+            `;
+            listInner.appendChild(noResultEl);
+          } else {
+            noResultEl.style.display = 'flex';
+          }
+        } else {
+          if (noResultEl) {
+            noResultEl.style.display = 'none';
+          }
+        }
+      }
+
+      function showDetail(element) {
+        const { carId, info } = element.dataset;
+        const { carInfo, carStatus, selectedImageID, reportRaw } = JSON.parse(decodeURIComponent(info));
+
+        document.getElementById('popTitle').innerText = carInfo;
+        document.getElementById('popStatus').innerText = carStatus;
+        document.getElementById('popReportRaw').innerText = reportRaw;
+        document.getElementById('mainImage').style.display = 'none';
+        document.getElementById('noPreviewText').style.display = 'block';
+        document.getElementById('noPreviewText').innerText = "데이터를 불러오는 중입니다...";
+        document.getElementById('thumbnailContainer').innerHTML = "<p class='loading'>이미지 불러오는 중...</p>";
+        document.getElementById('detailModal').style.display = 'flex';
+
+        fetch(`${GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}&imageId=${selectedImageID}`, { redirect: "follow" })
+          .then(res => res.json())
+          .then(result => {
+            fillModalData(result.data);
+          })
+          .catch(err => {
+            fillModalData(error.message);
+          });
+      }
+
+      function fillModalError(message) {
+        const mainImg = document.getElementById('mainImage');
+        const noPreviewText = document.getElementById('noPreviewText');
+        const thumbContainer = document.getElementById('thumbnailContainer');
+
+        thumbContainer.innerHTML = '';
+
+        mainImg.style.display = 'none';
+        mainImg.src = '';
+        
+        noPreviewText.innerText = "데이터 조회 실패: " + message;
+        noPreviewText.style.display = 'block';
+
+        thumbContainer.style.display = 'none';
+        return;
+      }
+
+      function fillModalData(imagesData) {
+        const mainImg = document.getElementById('mainImage');
+        const noPreviewText = document.getElementById('noPreviewText');
+        const thumbContainer = document.getElementById('thumbnailContainer');
+
+        thumbContainer.innerHTML = '';
+
+        if (!imagesData || imagesData.length === 0) {
+          mainImg.style.display = 'none';
+          mainImg.src = '';
+          
+          noPreviewText.innerText = "해당 차량을 촬영한 사진이 없습니다.";
+          noPreviewText.style.display = 'block';
+
+          thumbContainer.style.display = 'none';
+          return;
+        }
+        thumbContainer.style.display = 'flex';
+
+        const mainImage = imagesData.find(item => item.isSelected) || imagesData[0];
+
+        if (mainImage && mainImage.base64) {
+          mainImg.src = "data:image/jpeg;base64," + mainImage.base64;
+          mainImg.style.display = 'block';
+          noPreviewText.style.display = 'none';
+          mainImg.onclick = function () { downloadFile(mainImage.fileId) };
+        } else {
+          mainImg.style.display = 'none';
+          noPreviewText.innerText = "촬영한 사진이 지워지거나 위치가 변경되었습니다.";
+          noPreviewText.style.display = 'block';
+        }
+
+        imagesData.forEach(item => {
+          const { imageId, isSelected, fileId, base64, fileName } = item;
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'thumb-wrapper';
+          if (isSelected) wrapper.classList.add('active');
+
+          const img = document.createElement('img');
+          img.src = "data:image/jpeg;base64," + base64;
+          img.className = 'thumb-img';
+          wrapper.appendChild(img);
+
+          wrapper.onclick = function() {
+            document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
+            wrapper.classList.add('active');
+            mainImg.src = "data:image/jpeg;base64," + base64; 
+            mainImg.onclick = function () { downloadFile(fileId) };
+          };
+
+          thumbContainer.appendChild(wrapper);
+        });
+      }
+
+      function closeModal() {
+        document.getElementById('detailModal').style.display = 'none';
+      }
+
+      window.onclick = function(event) {
+        const modal = document.getElementById('detailModal');
+        if (event.target == modal) {
+          modal.style.display = 'none';
+        }
+      }
+
+      function downloadFile(fileId) {
+        if (!fileId || fileId.trim() === "") return;
+
+        fetch(`${GAS_URL}?action=getFileData&key=${APP_KEY}&fileId=${fileId}`, { redirect: "follow" })
+            .then(response => response.json())
+            .then(result => {
+              var fileObj = result.data;
+              var byteCharacters = atob(fileObj.base64);
+              var byteNumbers = new Array(byteCharacters.length);
+              for (var i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+              }
+              var byteArray = new Uint8Array(byteNumbers);
+              var blob = new Blob([byteArray], {type: fileObj.mimeType});
+  
+              var link = document.createElement('a');
+              link.href = window.URL.createObjectURL(blob);
+              link.download = fileObj.filename;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            })
+            .catch(error => {
+              alert("사진을 다운로드 하는 중 에러가 발생했습니다. 잠시후 다시 시도해주세요. : " + error.message);
+            });
+      }
+
+      function checkWorkTimeAndSync() {
+        fetchData();
+        stopSyncInterval();
+
+        if (document.hidden) {
+          // console.log("⏸️ 화면이 숨겨져 있어 자동 동기화 예약을 대기합니다.");
+          return;
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value.trim().length > 0) {
+          // console.log("⏸️ 차량 검색 중이므로 자동 동기화를 대기합니다.");
+          return;
+        }
+        
+        window.syncInterval = setInterval(function() {
+          var currentHour = new Date().getHours();
+          
+          if (currentHour < 10) {
+            if (document.getElementById('searchInput').value.trim().length === 0) {
+              fetchData();
+              // console.log("🔄 [동기화 완료] 현재 시간: " + new Date().toLocaleTimeString());
+            }
+          } else {
+            document.getElementById('status-msg').innerText = "⏹️ 2W 근무 종료.. 자동 동기화 중지 (마지막 데이터)";
+            stopSyncInterval();
+          }
+        }, 30*1000);
+      }
+
+      function stopSyncInterval() {
+        if (window.syncInterval) {
+          clearInterval(window.syncInterval);
+          window.syncInterval = null;
+        }
+      }
+
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(checkWorkTimeAndSync, 500);
+      });
+
+      document.addEventListener('visibilitychange', async () => {
+        if (document.hidden) {
+          stopSyncInterval();
+          // console.log("⏸️ 백그라운드 진입: 구글 서버 호출 일시정지");
+        } else {
+          // console.log("▶️ 화면 복귀: 동기화 및 Wake Lock 상태 재점검");
+          checkWorkTimeAndSync(); 
+        }
+      });
+
+      function fetchData() {
+        document.getElementById('status-msg').innerText = "데이터 동기화 중...";
+      
+        fetch(`${GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
+          .then(response => response.json())
+          .then(result => {
+            if (result.status === "error") {
+              document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
+              return;
+            }
+            updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
+          })
+          .catch(error => {
+            document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
+          });
+      }
+
+      function updateUI(sheetData) {
+        const now = new Date();
+        
+        const timeStr = [
+          String(now.getHours()).padStart(2, '0'),
+          String(now.getMinutes()).padStart(2, '0'),
+          String(now.getSeconds()).padStart(2, '0')
+        ].join(':');
+        document.getElementById('status-msg').innerText = `✅ 마지막 업데이트: ${timeStr}`;
+
+        const isNotBucheon = (hub) => !String(hub).includes("부천3");
+
+        const dataSummary = sheetData.reduce((acc, item) => {
+          const { wave, hub, isUnloaded, type } = item;
+
+          if (wave === "1W" && isNotBucheon(hub)) {
+            acc.max1WLength++;
+            if (isUnloaded) acc.unloaded1WLength++;
+            else {
+              if (/신선/.test(type)) acc.freshCount1W++;
+              if (/PB|복합/.test(type)) acc.pbCount1W++;
+              if (/SIOC|이형/.test(type)) acc.ectCount1W++;
+            }
+          }
+
+          if (wave === "2W" && isNotBucheon(hub)) {
+            acc.max2WLength++;
+            if (isUnloaded) acc.unloaded2WLength++;
+            else {
+              if (/SIOC|복합|신선/.test(type)) acc.siocCount2W++; // else문 내 기존 filter 조건 반영
+              if (/PB/.test(type)) acc.pbCount2W++;
+              if (/이형/.test(type)) acc.irrCount2W++;
+            }
+          }
+
+          if (hub === "SF부천3") {
+            acc.maxPicosLength++;
+            if (isUnloaded) acc.unloadedPicosLength++;
+          }
+
+          if (hub === "부천3") {
+            acc.maxClustersLength++;
+            if (isUnloaded) acc.unloadedClustersLength++;
+          }
+
+          return acc;
+        }, {
+          max1WLength: 0, unloaded1WLength: 0, freshCount1W: 0, pbCount1W: 0, ectCount1W: 0,
+          max2WLength: 0, unloaded2WLength: 0, siocCount2W: 0, pbCount2W: 0, irrCount2W: 0,
+          maxPicosLength: 0, unloadedPicosLength: 0, maxClustersLength: 0, unloadedClustersLength: 0
+        });
+
+        const remainingCars1W = dataSummary.max1WLength - dataSummary.unloaded1WLength;
+        const remainingCars2W = dataSummary.max2WLength - dataSummary.unloaded2WLength;
+
+        if (remainingCars1W > 0 && now.getHours() < 3) {
+          document.getElementById('total-title').innerText = "남은 1W 차량 수";
+          document.getElementById('total-remaining').innerText = remainingCars1W;
+          document.getElementById('type-text1').textContent = `신선 : ${dataSummary.freshCount1W}`;
+          document.getElementById('type-text2').textContent = `PB : ${dataSummary.pbCount1W}`;
+          document.getElementById('type-text3').textContent = `기타 : ${dataSummary.ectCount1W}`;
+        } else {
+          document.getElementById('total-title').innerText = "남은 2W 차량 수";
+          document.getElementById('total-remaining').innerText = remainingCars2W;
+          document.getElementById('type-text1').textContent = `SIOC : ${dataSummary.siocCount2W}`;
+          document.getElementById('type-text2').textContent = `PB : ${dataSummary.pbCount2W}`;
+          document.getElementById('type-text3').textContent = `이형 : ${dataSummary.irrCount2W}`;
+        }
+
+        updateProgressBar('1w', dataSummary.unloaded1WLength, dataSummary.max1WLength);
+        updateProgressBar('2w', dataSummary.unloaded2WLength, dataSummary.max2WLength);
+        
+        document.getElementById('pico-text').innerText = `${dataSummary.unloadedPicosLength} / ${dataSummary.maxPicosLength}`;
+        document.getElementById('cluster-text').innerText = `${dataSummary.unloadedClustersLength} / ${dataSummary.maxClustersLength}`;
+
+        const listContainer = document.getElementById('full-list');
+        listContainer.innerHTML = '<div class="list-inner" id="list-inner"></div>'; 
+        const listInner = document.getElementById('list-inner'); 
+
+        if (sheetData.length === 0) {
+          const listItemHTML = `
+            <div class="list-item">
+              <span class="car-info"><small>
+                등록된 차량이 없습니다.
+              </small></span>
+            </div>
+          `;
+          
+          listInner.insertAdjacentHTML('beforeend', listItemHTML);
+          return;
+        }
+
+        const freshHubs = new Set(['인천11', '인천15', '부천2', '인천12', '인천22', '곤지암1']);
+
+        sheetData.forEach((item) => {
+          const { carId, hub, type, isArrival, wave, selectedImageID, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, reportRaw } = item;
+
+          if (hub.includes("부천3") && !isArrival) return; 
+
+          let prefix = "";
+          if (wave === "1W") {
+            prefix = "★";
+          } else {
+            if (freshHubs.has(hub)) {
+              prefix = "◇";
+            }
+          }
+
+          const hasFile = selectedImageID && selectedImageID.trim() !== "";
+          const fileStatusText = hasFile ? "🖼️ " : "";
+
+          const hubMap = {
+            "부천3": "클러스터",
+            "광주": "경기광주1"
+          };
+          const hubStr = hubMap[hub] || hub;
+
+          let typeStr = "";
+          switch (true) {
+            case /신선/.test(type):
+              typeStr = "fresh";
+              break;
+            case /PB|PICO/.test(type):
+              typeStr = "pb";
+              break;
+            case /이형/.test(type):
+              typeStr = "irr";
+              break;
+            default:
+              typeStr = "sioc";
+              break;
+          }
+
+          const carInfo = `${prefix}${hubStr} | ${carNumber}`;
+          
+          let statusText = "미도착";
+          let badgeClass = "not-arrived";
+          
+          if (isUnloaded) {
+            statusText = "하차완료";
+            badgeClass = "unloaded";
+          } else if (isArrival) {
+            statusText = "대기중";
+            badgeClass = "waiting";
+          }
+
+          const ptNum = Number(pt) || 0;
+          const rtNum = Number(rt) || 0;
+
+          let unloadingStatus = [];
+          if (ptNum > 0) unloadingStatus.push(`PT : ${ptNum}개 `);
+          if (rtNum > 0) unloadingStatus.push(`RT : ${rtNum}개 `);
+
+          const infoObject = {
+            carInfo: carInfo,
+            carStatus: isArrival 
+              ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? unloadingStatus.join(", ") : ""}하차 완료` : ""}` 
+              : "미도착",
+            selectedImageID: selectedImageID || "",
+            reportRaw: reportRaw || "-"
+          };
+
+          const encodedInfo = encodeURIComponent(JSON.stringify(infoObject));
+
+          const listItemHTML = `
+            <div class="list-item ${badgeClass}" 
+                data-car-id="${carId}" 
+                data-info='${encodedInfo}' 
+                onclick="showDetail(this)">
+              <span class="type ${typeStr}"><small>${escapeHtml(type)}</small></span>
+              <span class="car-info ${isUnloaded ? "text-unloaded" : ""}">
+                ${fileStatusText}<small>${escapeHtml(carInfo)}</small></span>
+              <span class="badge ${badgeClass}"><small>${statusText}</small></span>
+            </div>
+          `;
+          
+          listInner.insertAdjacentHTML('beforeend', listItemHTML);
+        });
+
+        filterList();
+      }
+
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function updateProgressBar(idPrefix, unloaded, max) {
+        document.getElementById(`${idPrefix}-text`).innerText = `${unloaded} / ${max}`;
+        
+        const fillEl = document.getElementById(`${idPrefix}-fill`);
+        if (fillEl) {
+          const percentage = max === 0 ? 0 : (unloaded / max) * 100;
+          fillEl.style.width = `${percentage}%`;
+        }
+      }
+    </script>
+  </body>
+</html>
