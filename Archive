@@ -486,7 +486,7 @@
     </div>
 
     <script>
-      const GAS_URL = "https://script.google.com/macros/s/여기에_배포된_앱_ID/exec";
+      const GAS_URL = "https://script.google.com/macros/s/AKfycbxO3sGYKLwydZAZ6d9phNWDIR-jl8JV4pjQlKCYaLZVR0ExqeoXRM5dDr7udIYRunJe8g/exec";
       const APP_KEY = sessionStorage.getItem("APP_KEY");
       const USER_TYPE = sessionStorage.getItem("USER_TYPE") || "guest";
       
@@ -616,7 +616,7 @@
             fillModalData(result.data);
           })
           .catch(err => {
-            fillModalData(error.message);
+            fillModalData(err.message);
           });
       }
 
@@ -724,6 +724,9 @@
         const canvas = document.getElementById('watermarkCanvas');
         const ctx = canvas.getContext('2d');
 
+        let width = img.width;
+        let height = img.height;
+
         const MAX_SIZE = 1920; 
         canvas.width = img.width;
         canvas.height = img.height;
@@ -739,7 +742,7 @@
         canvas.width = width;
         canvas.height = height;
 
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, width, height);
 
         const now = new Date();
         const parts = currentUploadCarInfo.split('|').map(s => s.trim());
@@ -747,7 +750,6 @@
         const carNum = parts[1] || "";
         const carSeq = (hub !== "") ? `${currentUploadCarSeq}호차` : "";
         const leftText = `${hub}ㅤ${carSeq}`; // 중간에 넓은 공백 특수문자 있음
-        const now = new Date();
         const dateText = now.toLocaleDateString('ko-KR', {
             year: 'numeric',
             month: 'long',
@@ -785,7 +787,7 @@
 
         const timeFontSize = height * 0.16; 
         ctx.font = `900 ${timeFontSize}px "Pretendard GOV", sans-serif`;
-        const timeWidth = ctx.measureText(timeStr).width;
+        const timeWidth = ctx.measureText(timeText).width;
         
         const timeX = width / 2;
         const timeY = height * 0.80;
