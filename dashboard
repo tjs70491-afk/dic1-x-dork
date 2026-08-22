@@ -284,7 +284,7 @@
     </div>
 
     <script>
-      const GAS_URL = "https://script.google.com/macros/s/여기에_배포된_앱_ID/exec";
+      const GAS_URL = "https://script.google.com/macros/s/AKfycbxO3sGYKLwydZAZ6d9phNWDIR-jl8JV4pjQlKCYaLZVR0ExqeoXRM5dDr7udIYRunJe8g/exec";
       const APP_KEY = sessionStorage.getItem("APP_KEY"); // index.html에서 저장한 키
 
       let wakeLock = null;
