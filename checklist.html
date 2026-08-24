@@ -2,7 +2,7 @@
 <html>
   <head>
     <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no interactive-widget=resizes-content">
     <style>
       /* 전체 기본 설정 */
       body { 
@@ -393,7 +393,6 @@
         window.location.href = "index.html";
       }
 
-      if (USER_TYPE === "guest") document.getElementById('qrOpenBtn').style.display = 'none';
 
       var pendingRequests = 0;
       window.syncInterval = null;
@@ -720,6 +719,10 @@
       }
 
       window.addEventListener('DOMContentLoaded', function() {
+        if (USER_TYPE === "guest") {
+          const qrBtn = document.getElementById('qrOpenBtn');
+          if (qrBtn) qrBtn.style.display = 'none';
+        }
         setTimeout(checkWorkTimeAndSync, 500);
       });
 
