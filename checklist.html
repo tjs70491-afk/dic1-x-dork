@@ -386,7 +386,6 @@
     </div>
 
     <script>
-
       const APP_KEY = UTILS.getAuthKey();
       const USER_TYPE = UTILS.getUserType();
       if (!APP_KEY) {
@@ -412,10 +411,10 @@
         var qrImage = document.getElementById('qrImage');
         var qrErrDetail = document.getElementById('qrErrDetail');
 
-        qrImage.sytle.display = 'none';
+        qrImage.style.display = 'none';
         qrErrDetail.style.display = 'none';
 
-        fetch(`${GAS_URL}?action=generateGuestLink&key=${APP_KEY}`, { redirect: "follow" })
+        fetch(`${CONFIG.GAS_URL}?action=generateGuestLink&key=${APP_KEY}`, { redirect: "follow" })
           .then(response => response.json())
           .then(result => {
             if (result.status === "error") {
@@ -545,7 +544,7 @@
         stopSyncInterval();
         pendingRequests++;
 
-        fetch(`${GAS_URL}?action=toggleCheck&key=${APP_KEY}&rowIdx=${rowIdx}`, { redirect: "follow" })
+        fetch(`${CONFIG.GAS_URL}?action=toggleCheck&key=${APP_KEY}&rowIdx=${rowIdx}`, { redirect: "follow" })
           .then(res => res.json())
           .then(result => {
             btnElement.disabled = false;
@@ -606,7 +605,7 @@
       function fetchData() {
         document.getElementById('status-msg').innerText = "데이터 동기화 중...";
       
-        fetch(`${GAS_URL}?action=getChecklistData&key=${APP_KEY}`, { redirect: "follow" })
+        fetch(`${CONFIG.GAS_URL}?action=getChecklistData&key=${APP_KEY}`, { redirect: "follow" })
           .then(response => response.json())
           .then(result => {
             if (result.status === "error") {
@@ -690,20 +689,20 @@
           if (String(hub).includes("부천3") && !arr) return;
 
           var badgeClass = "not-arrived";
-          var checkIcon = ICONS.empty;
+          var checkIcon = CONFIG.ICONS.empty;
 
           if (unl) {
             badgeClass = "unloaded";
-            checkIcon = ICONS.doubleChecked;
+            checkIcon = CONFIG.ICONS.doubleChecked;
           } else if (arr) {
             badgeClass = "waiting";
-            checkIcon = ICONS.checked;
+            checkIcon = CONFIG.ICONS.checked;
           }
-
+          
+          var itemWave = wave(cId);
           const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
           const hubStr = UTILS.getHubDisplayName(hub);
           var carInfo = UTILS.escapeHtml(prefix + hubStr + " | " + carN);
-          var itemWave = wave(cId);
           var isBucheon = String(hub).includes("부천3");
 
           var listItemHTML = 
