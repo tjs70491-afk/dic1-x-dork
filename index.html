@@ -9,12 +9,13 @@
   <h2>인증 정보를 확인하고 있습니다...</h2>
   <script>
     const APP_KEY = UTILS.getAuthKey();
-    const USER_TYPE = UTILS.getUserType();
+    const urlParams = new URLSearchParams(window.location.search);
+    
     if (!APP_KEY) {
       document.body.innerHTML = "<h2>접근 불가: 보안 키가 없습니다.</h2>";
     } else {
       
-      fetch(`${GAS_URL}?action=verifyKey&key=${APP_KEY}`)
+      fetch(`${CONFIG.GAS_URL}?action=verifyKey&key=${APP_KEY}`)
         .then(res => res.json())
         .then(res => {
           if (res.status === "error") {
@@ -30,9 +31,9 @@
   
           let targetPage = urlParams.get('p') || 'dashboard';
   
-          if (PERMISSIONS.checklist.includes(userType) && targetPage === 'checklist') {
+          if (CONFIG.PERMISSIONS.checklist.includes(userType) && targetPage === 'checklist') {
             window.location.replace("checklist.html");
-          } else if (PERMISSIONS.archive.includes(userType) && targetPage === 'archive') {
+          } else if (CONFIG.PERMISSIONS.archive.includes(userType) && targetPage === 'archive') {
             window.location.replace("archive.html");
           } else {
             window.location.replace("dashboard.html");
