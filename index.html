@@ -3,39 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <title>시스템 접속 중...</title>
+  <script src="config.js"></script>
 </head>
 <body>
   <h2>인증 정보를 확인하고 있습니다...</h2>
   <script>
-
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyPol8QpXLKNpiMZ_xJoVlp4TThiQP9m4kD3Ffj8tz9mT7ScJNsUKD_ocmWdJOiv8JJqA/exec";
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const key = urlParams.get('key');
-
-    if (!key) {
+    const APP_KEY = UTILS.getAuthKey();
+    const USER_TYPE = UTILS.getUserType();
+    if (!APP_KEY) {
       document.body.innerHTML = "<h2>접근 불가: 보안 키가 없습니다.</h2>";
     } else {
-
-      sessionStorage.setItem("APP_KEY", key);
-
-      fetch(`${GAS_URL}?action=verifyKey&key=${key}`)
+      
+      fetch(`${GAS_URL}?action=verifyKey&key=${APP_KEY}`)
         .then(res => res.json())
         .then(res => {
           if (res.status === "error") {
+            // 키가 만료/폐기된 경우 저장소 비우기
+            localStorage.removeItem("APP_KEY");
+            localStorage.removeItem("USER_TYPE");
             document.body.innerHTML = `<h2>${res.message}</h2>`;
             return;
           }
           
           const userType = res.userType;
-
-          sessionStorage.setItem("USER_TYPE", userType); 
-
+          localStorage.setItem("USER_TYPE", userType); 
+  
           let targetPage = urlParams.get('p') || 'dashboard';
-
-          if (["ADMIN", "helper", "signal", "guest"].includes(userType) && targetPage === 'checklist') {
+  
+          if (PERMISSIONS.checklist.includes(userType) && targetPage === 'checklist') {
             window.location.replace("checklist.html");
-          } else if (["ADMIN", "helper", "SeniorHelperLeader", "field-admin", "X-mover"].includes(userType) && targetPage === 'archive') {
+          } else if (PERMISSIONS.archive.includes(userType) && targetPage === 'archive') {
             window.location.replace("archive.html");
           } else {
             window.location.replace("dashboard.html");
