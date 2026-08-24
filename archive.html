@@ -667,7 +667,7 @@
         document.getElementById('thumbnailContainer').innerHTML = "<p class='loading'>이미지 불러오는 중...</p>";
         document.getElementById('detailModal').style.display = 'flex';
 
-        fetch(`${GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}&imageId=${selectedImageID}`, { redirect: "follow" })
+        fetch(`${CONFIG.GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}&imageId=${selectedImageID}`, { redirect: "follow" })
           .then(res => res.json())
           .then(result => {
             fillModalData(result.data);
@@ -841,7 +841,7 @@
           drawText(dateText, timeStartX, dateY, dateFontSize, "left");
 
           try {
-            const base64Data = canvas.toDataURL("image/jpeg", 0.7).split(',')[1]; 
+            const base64Data = canvas.toDataURL("image/jpeg", 0.6).split(',')[1]; 
             uploadToBackend(base64Data);
           } catch (error) {
             console.error("Canvas 변환 실패:", error);
@@ -1015,7 +1015,7 @@
         img.onload = function() {
           applyWatermarkAndUpload(img);
         };
-        img.src = tempCanvas.toDataURL("image/jpeg", 0.95);
+        img.src = tempCanvas.toDataURL("image/jpeg", 0.60);
       }
 
       function uploadToBackend(base64Data) {
@@ -1027,7 +1027,7 @@
           image: base64Data
         };
 
-        fetch(GAS_URL, {
+        fetch(CONFIG.GAS_URL, {
           method: "POST",
           body: JSON.stringify(payload)
         })
@@ -1071,7 +1071,7 @@
       function downloadFile(fileId) {
         if (!fileId || fileId.trim() === "") return;
 
-        fetch(`${GAS_URL}?action=getFileData&key=${APP_KEY}&fileId=${fileId}`, { redirect: "follow" })
+        fetch(`${CONFIG.GAS_URL}?action=getFileData&key=${APP_KEY}&fileId=${fileId}`, { redirect: "follow" })
             .then(response => response.json())
             .then(result => {
               var fileObj = result.data;
@@ -1122,7 +1122,7 @@
             document.getElementById('status-msg').innerText = "⏹️ 2W 근무 종료.. 자동 동기화 중지 (마지막 데이터)";
             stopSyncInterval();
           }
-        }, CONFIG.SYNC.DASHBOARD_MS));
+        }, CONFIG.SYNC.DASHBOARD_MS);
       }
 
       function stopSyncInterval() {
@@ -1149,7 +1149,7 @@
       function fetchData() {
         document.getElementById('status-msg').innerText = "데이터 동기화 중...";
       
-        fetch(`${GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
+        fetch(`${CONFIG.GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
           .then(response => response.json())
           .then(result => {
             if (result.status === "error") {
