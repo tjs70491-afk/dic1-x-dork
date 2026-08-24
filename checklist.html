@@ -503,7 +503,7 @@
         var isBucheon = listItem.getAttribute('data-bucheon') === 'true';
 
         if (!isAlreadyWaiting) { 
-          btnElement.innerHTML = ICONS.checked;
+          btnElement.innerHTML = CONFIG.ICONS.checked;
           listItem.classList.remove('not-arrived');
           listItem.classList.add('waiting');
           
@@ -516,7 +516,7 @@
 
           if (!isBucheon) updateRemainCount(wave, -1);
         } else {
-          btnElement.innerHTML = ICONS.empty;
+          btnElement.innerHTML = CONFIG.ICONS.empty;
           listItem.classList.remove('waiting');
           listItem.classList.add('not-arrived');
 
