@@ -376,7 +376,7 @@
       function fetchData() {
         document.getElementById('status-msg').innerText = "데이터 동기화 중...";
       
-        fetch(`${GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
+        fetch(`${CONFIG.GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
           .then(response => response.json())
           .then(result => {
             if (result.status === "error") {
