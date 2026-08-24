@@ -234,7 +234,7 @@
       .badge.unloaded small { background: #d6e4da; color: #137333; }
       .badge.waiting small { background: #eee7d0; color: #b06000; }
       .badge.not-arrived small { background: #f2f4f5; color: #5f6368; }
-      .text-unloaded small { text-decoration: line-through; color: #9aa0a6; }
+      .text-unloaded small { color: #9aa0a6; }
 
       .modal { 
         display: none; 
@@ -327,7 +327,16 @@
         pointer-events: none;
       }
 
-      .thumbnail-zone { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+      .thumbnail-zone { 
+        display: flex; 
+        gap: 10px; 
+        flex-wrap: wrap; 
+        margin-top: 15px; 
+        max-height: 170px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 4px;
+      }
       .thumb-wrapper { position: relative; width: 70px; height: 70px; cursor: pointer; }
       .thumb-img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #ddd; border-radius: 6px; box-sizing: border-box; }
       
@@ -335,6 +344,20 @@
       .thumb-wrapper:hover .thumb-img { border-color: #007bff; opacity: 0.8; }
 
       .loading { text-align: center; color: #666; }
+
+      .bottom-guide-box {
+        background: rgba(0, 0, 0, 0.65);
+        padding: 14px 14px 12px 14px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2px dashed rgba(255,255,255,0.4);
+      }
+      .guide-time-wrapper {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
 
       @media (max-width: 768px) {
         body {
@@ -378,8 +401,7 @@
 
       @font-face {
         font-family: 'PretendardGOV-Bold';
-        src: url('./fonts/PretendardGOV-Bold.otf') format('opentype');
-        font-weight: 700;
+        src: url('./fonts/PretendardGOV-Bold.woff2') format('woff2');
         font-style: normal;
       }
     </style>
@@ -496,7 +518,7 @@
       <div class="modal-content" style="max-width: 480px; padding: 15px; text-align: center; background: #111; color: white; border-radius: 16px;">
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <span style="font-size: 15px; font-weight: bold; color: #aaa;">📸 워터마크 촬영 가이드</span>
+          <span style="font-size: 15px; font-weight: bold; color: #aaa;">📸 접안 사진 촬영</span>
           <span class="close-btn" onclick="closeCameraModal()" style="color: #fff; position: static; font-size: 28px; line-height: 1;">&times;</span>
         </div>
         
@@ -509,28 +531,23 @@
           <div id="focusRing" style="display: none; position: absolute; width: 60px; height: 60px; border: 2px solid #ffd000; border-radius: 8px; pointer-events: none; transform: translate(-50%, -50%) scale(1.3); transition: transform 0.2s ease, opacity 0.3s ease; box-shadow: 0 0 8px rgba(255, 208, 0, 0.6); z-index: 10;"></div>
     
           <!-- [가이드 오버레이 레이어] 클릭 방해 금지: pointer-events: none -->
-          <div style="position: absolute; top:0; left:0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; box-sizing: border-box;">
+          <div style="position: absolute; top:0; left:0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; box-sizing: border-box; border: 1.5px rgb(255,255,255);">
   
-            <!-- 1. 상단 워터마크 영역 -->
-            <div style="background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%); padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start;">
-              <!-- text-shadow 적용 -->
-              <span id="guideTopLeft" style="font-family: 'PretendardGOV-Bold', sans-serif; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8);"></span>
-              <span id="guideTopRight" style="font-family: 'PretendardGOV-Bold', sans-serif; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8);"></span>
-            </div>
-          
-            <!-- 2. 중앙 피사체 안내선 -->
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.5;">
-              <div style="width: 75%; height: 110px; border: 1.5px dashed rgba(255,255,255,0.7); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                <span style="font-size: 12px; color: #fff; text-shadow: 0 0 4px #000;">🎯 피사체 배치 구역</span>
-              </div>
-            </div>
-          
-            <!-- 3. 하단 워터마크 영역 -->
-            <div style="background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%); padding: 16px 14px 12px 14px; text-align: center;">
-              <!-- text-shadow 적용 -->
-              <div id="guideDate" style="font-family: 'PretendardGOV-Bold', sans-serif; font-size: 12px; font-weight: 700; color: #ffffff; margin-bottom: 2px; text-shadow: 0 0 4px #000000, 0 0 6px rgba(0,0,0,0.8);"></div>
-              <div id="guideTime" style="font-family: 'PretendardGOV-Bold', sans-serif; font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-shadow: 0 0 5px #000000, 0 0 10px rgba(0,0,0,0.8);"></div>
-            </div>
+          <!-- 1. 상단 워터마크 영역 (상단 2%, 좌우 5% 여백) -->
+          <div style="background: rgba(0, 0, 0, 0.65); padding: 3% 5%; display: flex; justify-content: space-between; align-items: flex-start; border: 2px dashed rgba(255,255,255,0.4);">
+            <!-- 좌측 상단 (leftText) -->
+            <span id="guideTopLeft" style="font-family: 'PretendardGOV-Bold', sans-serif; font-size: clamp(14px, 3.5vw, 17px); color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8); text-align: left;"></span>
+            <!-- 우측 상단 (carNum) -->
+            <span id="guideTopRight" style="font-family: 'PretendardGOV-Bold', sans-serif; font-size: clamp(14px, 3.5vw, 17px); color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8); text-align: right;"></span>
+          </div>
+        
+          <!-- 2. 하단 워터마크 영역 (좌측 5%, 하단 5.5% 기준 좌측 정렬) -->
+          <div style="background: rgba(0, 0, 0, 0.65); padding: 4% 5% 5.5% 5%; display: flex; flex-direction: column; align-items: flex-start; text-align: left; border: 2px dashed rgba(255,255,255,0.4);">
+            <!-- 날짜 (시간 바로 위에 좌측 정렬) -->
+            <div id="guideDate" style="font-family: 'PretendardGOV-Bold', sans-serif; font-size: clamp(12px, 2.8vw, 15px); color: #ffffff; margin-bottom: 2px; text-shadow: 0 0 4px #000000, 0 0 6px rgba(0,0,0,0.8); text-align: left;"></div>
+            <!-- 시간 (가장 아래 좌측 정렬) -->
+            <div id="guideTime" style="font-family: 'PretendardGOV-Bold', sans-serif; font-size: clamp(26px, 6.5vw, 36px); color: #ffffff; letter-spacing: -0.5px; text-shadow: 0 0 6px #000000, 0 0 12px rgba(0,0,0,0.9); line-height: 1; text-align: left;"></div>
+          </div>
           
           </div>
         </div>
@@ -786,12 +803,15 @@
         const carNum = parts[1] || "";
         const carSeq = (hub !== "") ? `${currentUploadCarSeq}호차` : "";
         const leftText = `${hub}  ${carSeq}`;
-        const dateText = now.toLocaleDateString('ko-KR', {
+        const datePart = now.toLocaleDateString('ko-KR', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric',
-          weekday: 'short'
+          day: 'numeric'
         });
+        const weekdayPart = now.toLocaleDateString('ko-KR', { 
+          weekday: 'short' 
+        });
+        const dateText = `${datePart} (${weekdayPart})`;
         const timeText = now.toLocaleTimeString('ko-KR', { 
           hour: '2-digit', 
           minute: '2-digit', 
@@ -799,10 +819,8 @@
           hour12: true 
         });
       
-        function drawText(text, x, y, size, align) {
-          ctx.font = `900 ${size}px "PretendardGOV-Bold", sans-serif`;
-          ctx.textAlign = align;
-          ctx.textBaseline = "top";
+        function drawText(text, x, y, size) {
+          ctx.font = `${size}px "PretendardGOV-Bold", sans-serif`;
           ctx.lineJoin = "round";
           ctx.miterLimit = 2;
       
@@ -821,29 +839,40 @@
           ctx.shadowBlur = canvas.height / 200;
           ctx.shadowOffsetX = 0;
           ctx.shadowOffsetY = 0;
-          
-          // 상단 좌/우 텍스트
-          drawText(leftText, sideMargin, topMargin, topFontSize, "left");
-          drawText(carNum, width - sideMargin, topMargin, topFontSize, "right");
-        
-          // 하단 시간 및 날짜
-          const timeFontSize = width * 0.11; 
-          const timeX = width / 2;
-          const timeY = height * 0.88;
-          
-          ctx.font = `900 ${timeFontSize}px "PretendardGOV-Bold", sans-serif`;
-          ctx.textAlign = "center"; 
-          const timeWidth = ctx.measureText(timeText).width;
-          
-          drawText(timeText, timeX, timeY, timeFontSize, "center");
-        
-          const dateFontSize = width * 0.038;
-          const timeStartX = (width / 2) - (timeWidth / 2);
-          const dateY = timeY - (dateFontSize * 1.3);
-          drawText(dateText, timeStartX, dateY, dateFontSize, "left");
+
+          ctx.textAlign = "left";
+
+          const timeTextSize = height * 0.11;
+          const dateTextSize = height * 0.04;
+          const carInfoTextSize = height * 0.04;
+          const carTextSize = height * 0.04;
+  
+          const marginX = width * 0.05;
+          const marginTop = height * 0.02;
+          const marginBottom = height * 0.055;
+  
+          // 시간 그리기
+          const yTime = height - marginBottom;
+          drawText(timeText, marginX, yTime, timeTextSize);
+  
+          // 날짜 그리기
+          const timeHeight = ctx.measureText(timeText).height;
+          const yDate = yTime - timeHeight; // 시간 바로 위에 배치
+          drawText(dateText, marginX, yDate, dateTextSize);
+  
+          // 차량 정보 그리기
+          const leftTextHeight = ctx.measureText(leftText).height;
+          const yCarInfo = marginTop + leftTextHeight // 첫 줄은 상단 여백 + 글자 높이만큼 내려와서 시작
+          drawText(leftText, marginX, yCarInfo, carInfoTextSize);
+  
+          // 차량 번호 그리기
+          ctx.textAlign = "right";
+          const xCar = width - marginX;
+          const yCar = marginTop + leftTextHeight; // 첫 줄은 상단 여백 + 글자 높이만큼 내려와서 시작
+          drawText(carNum, xCar, yCar, carTextSize);
 
           try {
-            const base64Data = canvas.toDataURL("image/jpeg", 0.6).split(',')[1]; 
+            const base64Data = canvas.toDataURL("image/jpeg", 0.8).split(',')[1]; 
             uploadToBackend(base64Data);
           } catch (error) {
             console.error("Canvas 변환 실패:", error);
@@ -893,13 +922,18 @@
         document.getElementById('guideTopLeft').innerText = `${hub}  ${carSeq}`;
         document.getElementById('guideTopRight').innerText = carNum;
       
-        // 2. 하단 날짜/시간 (실제 워터마크와 동일 포맷)
-        const dateText = now.toLocaleDateString('ko-KR', {
+        // 2. 하단 날짜 포맷 (캔버스 로직과 일치: YYYY년 M월 D일 (요일))
+        const datePart = now.toLocaleDateString('ko-KR', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric',
-          weekday: 'short'
+          day: 'numeric'
         });
+        const weekdayPart = now.toLocaleDateString('ko-KR', { 
+          weekday: 'short' 
+        });
+        const dateText = `${datePart} (${weekdayPart})`;
+      
+        // 3. 하단 시간 포맷 (오전/오후 HH:MM:SS)
         const timeText = now.toLocaleTimeString('ko-KR', { 
           hour: '2-digit', 
           minute: '2-digit', 
@@ -934,7 +968,6 @@
         const viewport = document.getElementById('cameraViewport');
         const ring = document.getElementById('focusRing');
         
-        // 1. 터치한 좌표 계산하여 초점 링 표시
         const rect = viewport.getBoundingClientRect();
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
@@ -943,34 +976,42 @@
         ring.style.top = `${y}px`;
         ring.style.display = 'block';
         ring.style.opacity = '1';
-        ring.style.transform = 'translate(-50%, -50%) scale(1)'; // 축소되며 포커싱 효과
+        ring.style.transform = 'translate(-50%, -50%) scale(1)';
       
-        // 1초 뒤 초점 링 서서히 사라짐
         setTimeout(() => {
           ring.style.opacity = '0';
           setTimeout(() => { ring.style.display = 'none'; }, 300);
         }, 1000);
       
-        // 2. 하드웨어 카메라 초점 재요청 (지원하는 브라우저 대상)
+        // 하드웨어 카메라 초점 지점(Point of Interest) 제어 시도
         if (videoStream) {
           const track = videoStream.getVideoTracks()[0];
           if (!track) return;
       
           const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+          const normalizedX = x / rect.width;
+          const normalizedY = y / rect.height;
       
           try {
-            // focusMode 변경을 지원하는 경우 (연속 AF 트리거)
-            if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-              await track.applyConstraints({
-                advanced: [{ focusMode: 'continuous' }]
-              });
-            } else if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
-              await track.applyConstraints({
-                advanced: [{ focusMode: 'single-shot' }]
+            const constraints = { advanced: [] };
+            
+            // 모바일 브라우저 표준 초점 지원
+            if (capabilities.pointsOfInterest) {
+              constraints.advanced.push({
+                pointsOfInterest: [{ x: normalizedX, y: normalizedY }]
               });
             }
+            if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+              constraints.advanced.push({ focusMode: 'continuous' });
+            } else if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
+              constraints.advanced.push({ focusMode: 'single-shot' });
+            }
+
+            if (constraints.advanced.length > 0) {
+              await track.applyConstraints(constraints);
+            }
           } catch (e) {
-            console.log("수동 초점 제어가 지원되지 않는 환경입니다 (기본 AF 동작):", e);
+            console.log("수동 AF 설정 미지원 환경 (기본 동작 유지):", e);
           }
         }
       }
@@ -1019,7 +1060,7 @@
         img.onload = function() {
           applyWatermarkAndUpload(img);
         };
-        img.src = tempCanvas.toDataURL("image/jpeg", 0.60);
+        img.src = tempCanvas.toDataURL("image/jpeg", 0.80);
       }
 
       function uploadToBackend(base64Data) {
@@ -1242,7 +1283,7 @@
         sheetData.forEach((item) => {
           const { carId, hub, type, isArrival, wave, selectedImageID, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, reportRaw, seq } = item;
 
-          if (hub.includes("부천3") && !isArrival) return; 
+          // if (hub.includes("부천3") && !isArrival) return; 
 
           const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
           const hubStr = UTILS.getHubDisplayName(hub);
