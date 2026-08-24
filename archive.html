@@ -4,7 +4,7 @@
     <base target="_top">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-gov.min.css" />
+    <link rel="preload" href="./fonts/PretendardGOV-Bold.otf" as="font" type="font/otf" crossorigin />
     
     <style>
       body { 
@@ -375,6 +375,13 @@
         }
         .car-info { font-size: clamp(22px, 4.6vw, 28px); }
       }
+
+      @font-face {
+        font-family: 'PretendardGOV-Bold';
+        src: url('./fonts/PretendardGOV-Bold.otf') format('opentype');
+        font-weight: 700;
+        font-style: normal;
+      }
     </style>
   </head>
   <body>
@@ -477,12 +484,60 @@
 
     </div>
 
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
     <canvas id="watermarkCanvas" style="display: none;"></canvas>
 
     <div id="uploadOverlay" class="modal" style="display:none; z-index: 9999; flex-direction: column; color: white; font-size: 20px; font-weight: bold;">
       <div style="margin-bottom: 15px;">⏳ 사진에 워터마크 적용 및 업로드 중...</div>
       <div style="font-size: 14px; color: #ccc;">잠시만 기다려주세요.</div>
+    </div>
+
+    <div id="cameraModal" class="modal" style="display:none; z-index: 2000;">
+      <div class="modal-content" style="max-width: 480px; padding: 15px; text-align: center; background: #111; color: white; border-radius: 16px;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span style="font-size: 15px; font-weight: bold; color: #aaa;">📸 워터마크 촬영 가이드</span>
+          <span class="close-btn" onclick="closeCameraModal()" style="color: #fff; position: static; font-size: 28px; line-height: 1;">&times;</span>
+        </div>
+        
+        <!-- 카메라 뷰파인더 & 가이드 컨테이너 -->
+        <div id="cameraViewport" onclick="handleFocus(event)" style="position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <!-- 비디오 프리뷰 -->
+          <video id="cameraVideo" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+
+          <div id="focusRing" style="display: none; position: absolute; width: 60px; height: 60px; border: 2px solid #ffd000; border-radius: 8px; pointer-events: none; transform: translate(-50%, -50%) scale(1.3); transition: transform 0.2s ease, opacity 0.3s ease; box-shadow: 0 0 8px rgba(255, 208, 0, 0.6); z-index: 10;"></div>
+    
+          <!-- [가이드 오버레이 레이어] 클릭 방해 금지: pointer-events: none -->
+          <div style="position: absolute; top:0; left:0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; box-sizing: border-box;">
+  
+            <!-- 1. 상단 워터마크 영역 -->
+            <div style="background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%); padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <!-- text-shadow 적용 -->
+              <span id="guideTopLeft" style="font-family: 'Pretendard GOV', sans-serif; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8);"></span>
+              <span id="guideTopRight" style="font-family: 'Pretendard GOV', sans-serif; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8);"></span>
+            </div>
+          
+            <!-- 2. 중앙 피사체 안내선 -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.5;">
+              <div style="width: 75%; height: 110px; border: 1.5px dashed rgba(255,255,255,0.7); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 12px; color: #fff; text-shadow: 0 0 4px #000;">🎯 피사체 배치 구역</span>
+              </div>
+            </div>
+          
+            <!-- 3. 하단 워터마크 영역 -->
+            <div style="background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%); padding: 16px 14px 12px 14px; text-align: center;">
+              <!-- text-shadow 적용 -->
+              <div id="guideDate" style="font-family: 'Pretendard GOV', sans-serif; font-size: 12px; font-weight: 700; color: #ffffff; margin-bottom: 2px; text-shadow: 0 0 4px #000000, 0 0 6px rgba(0,0,0,0.8);"></div>
+              <div id="guideTime" style="font-family: 'Pretendard GOV', sans-serif; font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-shadow: 0 0 5px #000000, 0 0 10px rgba(0,0,0,0.8);"></div>
+            </div>
+          
+          </div>
+        </div>
+    
+        <!-- 촬영 버튼 컨트롤 -->
+        <div style="margin-top: 15px; display: flex; justify-content: center; align-items: center;">
+          <button type="button" onclick="capturePhoto()" style="width: 64px; height: 64px; border-radius: 50%; border: 4px solid #ffffff; background: #1a73e8; cursor: pointer; outline: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.1s active;" onmousedown="this.style.transform='scale(0.92)'" onmouseup="this.style.transform='scale(1)'"></button>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -500,6 +555,9 @@
       let currentUploadCarId = "";
       let currentUploadCarInfo = "";
       let currentUploadCarSeq = "";
+
+      let videoStream = null;
+      let cameraGuideTimer = null;
 
       window.onerror = function(msg, url, line) {
         var statusMsg = document.getElementById('status-msg');
@@ -597,7 +655,7 @@
           currentUploadCarId = carId;
           currentUploadCarSeq = carSeq;
           currentUploadCarInfo = carInfo;
-          document.getElementById('cameraInput').click();
+          openCameraModal();
           return;
         }
 
@@ -703,104 +761,261 @@
         }
       }
 
-      document.getElementById('cameraInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        document.getElementById('uploadOverlay').style.display = 'flex';
-
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          const img = new Image();
-          img.onload = function() {
-            applyWatermarkAndUpload(img);
-          };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-
       function applyWatermarkAndUpload(img) {
         const canvas = document.getElementById('watermarkCanvas');
         const ctx = canvas.getContext('2d');
-
+      
         let width = img.width;
         let height = img.height;
-
-        const MAX_SIZE = 1920; 
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        if (width > height && width > MAX_SIZE) {
-          height = Math.round(height * (MAX_SIZE / width));
-          width = MAX_SIZE;
-        } else if (height > width && height > MAX_SIZE) {
-          width = Math.round(width * (MAX_SIZE / height));
-          height = MAX_SIZE;
+      
+        // 세로 사진 기준 적정 가로폭 (1080px 유지)
+        const MAX_WIDTH = 1080; 
+        if (width > MAX_WIDTH) {
+          height = Math.round(height * (MAX_WIDTH / width));
+          width = MAX_WIDTH;
         }
-
+      
         canvas.width = width;
         canvas.height = height;
-
+      
         ctx.drawImage(img, 0, 0, width, height);
-
+      
         const now = new Date();
         const parts = currentUploadCarInfo.split('|').map(s => s.trim());
         const hub = parts[0] || "";
         const carNum = parts[1] || "";
         const carSeq = (hub !== "") ? `${currentUploadCarSeq}호차` : "";
-        const leftText = `${hub}ㅤ${carSeq}`; // 중간에 넓은 공백 특수문자 있음
+        const leftText = `${hub}  ${carSeq}`;
         const dateText = now.toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            weekday: 'short'
-          });
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          weekday: 'short'
+        });
         const timeText = now.toLocaleTimeString('ko-KR', { 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit',
-            hour12: true 
-          });
+          hour: '2-digit', 
+          minute: '2-digit', 
+          second: '2-digit',
+          hour12: true 
+        });
 
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = canvas.height / 200;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      
         function drawText(text, x, y, size, align) {
-          ctx.font = `900 ${size}px "Pretendard GOV", sans-serif`;
+          ctx.font = `900 ${size}px "PretendardGOV-Bold", sans-serif`;
           ctx.textAlign = align;
           ctx.textBaseline = "top";
           ctx.lineJoin = "round";
           ctx.miterLimit = 2;
-
-          ctx.lineWidth = size * 0.15;
-          ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
-          ctx.strokeText(text, x, y);
-
+      
           ctx.fillStyle = "white";
           ctx.fillText(text, x, y);
         }
-
-        const topMargin = height * 0.03;
+      
+        // --- 워터마크 배치 계산 (3:4 비율 최적화) ---
+        const topMargin = height * 0.025;
         const sideMargin = width * 0.04;
-        const topFontSize = height * 0.055;
-
-        drawText(leftText, sideMargin, topMargin, topFontSize, "left");
-        drawText(carNum, width - sideMargin, topMargin, topFontSize, "right");
-
-        const timeFontSize = height * 0.16; 
-        ctx.font = `900 ${timeFontSize}px "Pretendard GOV", sans-serif`;
-        const timeWidth = ctx.measureText(timeText).width;
+        const topFontSize = width * 0.052;
         
-        const timeX = width / 2;
-        const timeY = height * 0.80;
-        drawText(timeText, timeX, timeY, timeFontSize, "center");
+        document.fonts.ready.then(function () {
+          // 상단 좌/우 텍스트
+          drawText(leftText, sideMargin, topMargin, topFontSize, "left");
+          drawText(carNum, width - sideMargin, topMargin, topFontSize, "right");
+        
+          // 하단 시간 및 날짜
+          const timeFontSize = width * 0.11; 
+          const timeX = width / 2;
+          const timeY = height * 0.88;
+          
+          ctx.font = `900 ${timeFontSize}px "PretendardGOV-Bold", sans-serif`;
+          ctx.textAlign = "center"; 
+          const timeWidth = ctx.measureText(timeText).width;
+          
+          drawText(timeText, timeX, timeY, timeFontSize, "center");
+        
+          const dateFontSize = width * 0.038;
+          const timeStartX = (width / 2) - (timeWidth / 2);
+          const dateY = timeY - (dateFontSize * 1.3);
+          drawText(dateText, timeStartX, dateY, dateFontSize, "left");
+        });
+        try {
+          const base64Data = canvas.toDataURL("image/jpeg", 0.7).split(',')[1]; 
+          uploadToBackend(base64Data);
+        } catch (error) {
+          console.error("Canvas 변환 실패:", error);
+        }
+      }
 
-        const dateFontSize = height * 0.05;
-        const timeStartX = (width / 2) - (timeWidth / 2);
-        const dateY = timeY - (dateFontSize * 1.1);
-        drawText(dateText, timeStartX, dateY, dateFontSize, "left");
+      // 1. 카메라 팝업 열기 & 스트림 연결
+      async function openCameraModal() {
+        const modal = document.getElementById('cameraModal');
+        const video = document.getElementById('cameraVideo');
+        
+        modal.style.display = 'flex';
+      
+        // 가이드 텍스트 초기화 및 1초 주기 실시간 시계 작동
+        updateCameraGuideUI();
+        if (cameraGuideTimer) clearInterval(cameraGuideTimer);
+        cameraGuideTimer = setInterval(updateCameraGuideUI, 1000);
+      
+        try {
+          videoStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              advanced: [{ focusMode: "continuous" }]
+            },
+            audio: false
+          });
+          video.srcObject = videoStream;
+        } catch (err) {
+          alert("카메라를 켤 수 없습니다: " + err.message);
+          closeCameraModal();
+        }
+      }
 
-        const base64Data = canvas.toDataURL("image/jpeg", 0.8).split(',')[1]; 
+      function updateCameraGuideUI() {
+        const now = new Date();
+        
+        // 1. 상단 정보
+        const parts = currentUploadCarInfo.split('|').map(s => s.trim());
+        const hub = parts[0] || "";
+        const carNum = parts[1] || "";
+        const carSeq = (hub !== "") ? `${currentUploadCarSeq}호차` : "";
+        
+        document.getElementById('guideTopLeft').innerText = `${hub}  ${carSeq}`;
+        document.getElementById('guideTopRight').innerText = carNum;
+      
+        // 2. 하단 날짜/시간 (실제 워터마크와 동일 포맷)
+        const dateText = now.toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          weekday: 'short'
+        });
+        const timeText = now.toLocaleTimeString('ko-KR', { 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          second: '2-digit',
+          hour12: true 
+        });
+      
+        document.getElementById('guideDate').innerText = dateText;
+        document.getElementById('guideTime').innerText = timeText;
+      }
+      
+      // 2. 카메라 팝업 닫기 & 스트림 중지 (배터리/자원 절약)
+      function closeCameraModal() {
+        const modal = document.getElementById('cameraModal');
+        const video = document.getElementById('cameraVideo');
+      
+        if (cameraGuideTimer) {
+          clearInterval(cameraGuideTimer);
+          cameraGuideTimer = null;
+        }
+      
+        if (videoStream) {
+          videoStream.getTracks().forEach(track => track.stop());
+          videoStream = null;
+        }
+        if (video) video.srcObject = null;
+      
+        modal.style.display = 'none';
+      }
 
-        uploadToBackend(base64Data);
+      async function handleFocus(event) {
+        const viewport = document.getElementById('cameraViewport');
+        const ring = document.getElementById('focusRing');
+        
+        // 1. 터치한 좌표 계산하여 초점 링 표시
+        const rect = viewport.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+      
+        ring.style.left = `${x}px`;
+        ring.style.top = `${y}px`;
+        ring.style.display = 'block';
+        ring.style.opacity = '1';
+        ring.style.transform = 'translate(-50%, -50%) scale(1)'; // 축소되며 포커싱 효과
+      
+        // 1초 뒤 초점 링 서서히 사라짐
+        setTimeout(() => {
+          ring.style.opacity = '0';
+          setTimeout(() => { ring.style.display = 'none'; }, 300);
+        }, 1000);
+      
+        // 2. 하드웨어 카메라 초점 재요청 (지원하는 브라우저 대상)
+        if (videoStream) {
+          const track = videoStream.getVideoTracks()[0];
+          if (!track) return;
+      
+          const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+      
+          try {
+            // focusMode 변경을 지원하는 경우 (연속 AF 트리거)
+            if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+              await track.applyConstraints({
+                advanced: [{ focusMode: 'continuous' }]
+              });
+            } else if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
+              await track.applyConstraints({
+                advanced: [{ focusMode: 'single-shot' }]
+              });
+            }
+          } catch (e) {
+            console.log("수동 초점 제어가 지원되지 않는 환경입니다 (기본 AF 동작):", e);
+          }
+        }
+      }
+      
+      // 3. 현재 프리뷰 화면 캡처 및 워터마크 함수 호출
+      function capturePhoto() {
+        const video = document.getElementById('cameraVideo');
+        if (!videoStream || !video.videoWidth) return;
+      
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+      
+        // 프리뷰와 동일한 3:4 비율 계산
+        const targetRatio = 3 / 4;
+        let sWidth, sHeight, sx, sy;
+      
+        // 비디오 원본 영상에서 3:4 영역만 중앙 크롭 계산
+        if (vw / vh > targetRatio) {
+          // 비디오가 더 가로로 긴 경우 (좌우 자름)
+          sHeight = vh;
+          sWidth = vh * targetRatio;
+          sx = (vw - sWidth) / 2;
+          sy = 0;
+        } else {
+          // 비디오가 더 세로로 긴 경우 (상하 자름)
+          sWidth = vw;
+          sHeight = vw / targetRatio;
+          sx = 0;
+          sy = (vh - sHeight) / 2;
+        }
+      
+        // 최종 저장할 캔버스 (고해상도 3:4 비율: 가로 1080 x 세로 1440 등)
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = sWidth;
+        tempCanvas.height = sHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+      
+        // 화면에 보였던 3:4 영역만 정확히 복사
+        tempCtx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+      
+        closeCameraModal();
+        document.getElementById('uploadOverlay').style.display = 'flex';
+      
+        const img = new Image();
+        img.onload = function() {
+          applyWatermarkAndUpload(img);
+        };
+        img.src = tempCanvas.toDataURL("image/jpeg", 0.95);
       }
 
       function uploadToBackend(base64Data) {
@@ -819,7 +1034,6 @@
         .then(res => res.json())
         .then(result => {
           document.getElementById('uploadOverlay').style.display = 'none';
-          document.getElementById('cameraInput').value = ""; // input 초기화
           
           if(result.status === "success") {
             alert("✅ 사진이 성공적으로 업로드 되었습니다.");
@@ -829,7 +1043,6 @@
         })
         .catch(err => {
           document.getElementById('uploadOverlay').style.display = 'none';
-          document.getElementById('cameraInput').value = "";
           alert("❌ 네트워크 에러: " + err.message);
         });
       }
