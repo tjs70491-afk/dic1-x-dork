@@ -513,8 +513,8 @@
             <!-- 1. 상단 워터마크 영역 -->
             <div style="background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%); padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start;">
               <!-- text-shadow 적용 -->
-              <span id="guideTopLeft" style="font-family: 'Pretendard GOV', sans-serif; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8);"></span>
-              <span id="guideTopRight" style="font-family: 'Pretendard GOV', sans-serif; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8);"></span>
+              <span id="guideTopLeft" style="font-family: 'PretendardGOV-Bold', sans-serif; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8);"></span>
+              <span id="guideTopRight" style="font-family: 'PretendardGOV-Bold', sans-serif; font-weight: 900; font-size: 15px; color: #ffffff; text-shadow: 0 0 4px #000000, 0 0 8px rgba(0,0,0,0.8);"></span>
             </div>
           
             <!-- 2. 중앙 피사체 안내선 -->
@@ -527,8 +527,8 @@
             <!-- 3. 하단 워터마크 영역 -->
             <div style="background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%); padding: 16px 14px 12px 14px; text-align: center;">
               <!-- text-shadow 적용 -->
-              <div id="guideDate" style="font-family: 'Pretendard GOV', sans-serif; font-size: 12px; font-weight: 700; color: #ffffff; margin-bottom: 2px; text-shadow: 0 0 4px #000000, 0 0 6px rgba(0,0,0,0.8);"></div>
-              <div id="guideTime" style="font-family: 'Pretendard GOV', sans-serif; font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-shadow: 0 0 5px #000000, 0 0 10px rgba(0,0,0,0.8);"></div>
+              <div id="guideDate" style="font-family: 'PretendardGOV-Bold', sans-serif; font-size: 12px; font-weight: 700; color: #ffffff; margin-bottom: 2px; text-shadow: 0 0 4px #000000, 0 0 6px rgba(0,0,0,0.8);"></div>
+              <div id="guideTime" style="font-family: 'PretendardGOV-Bold', sans-serif; font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-shadow: 0 0 5px #000000, 0 0 10px rgba(0,0,0,0.8);"></div>
             </div>
           
           </div>
@@ -1035,6 +1035,27 @@
           document.getElementById('uploadOverlay').style.display = 'none';
           
           if(result.status === "success") {
+            const targetItem = document.querySelector(`.list-item[data-car-id="${currentUploadCarId}"]`);
+            if (targetItem) {
+              const carInfoEl = targetItem.querySelector('.car-info');
+              if (carInfoEl && !carInfoEl.textContent.includes('🖼️')) {
+                // small 태그 앞에 🖼️ 추가
+                carInfoEl.insertAdjacentText('afterbegin', '🖼️ ');
+              }
+      
+              // data-info 속성 내부 데이터도 낙관적 갱신
+              try {
+                const infoObj = JSON.parse(decodeURIComponent(targetItem.dataset.info));
+                infoObj.selectedImageID = result.imageId || "OPTIMISTIC_ID";
+                targetItem.dataset.info = encodeURIComponent(JSON.stringify(infoObj));
+              } catch (e) {
+                console.error("data-info 갱신 실패:", e);
+              }
+      
+              // '🖼️ 사진' 퀵 필터 등이 켜져 있을 경우를 대비해 필터 재적용
+              filterList();
+            }
+      
             alert("✅ 사진이 성공적으로 업로드 되었습니다.");
           } else {
             alert("❌ 업로드 실패: " + result.message);
@@ -1091,7 +1112,7 @@
         window.syncInterval = setInterval(function() {
           var currentHour = new Date().getHours();
           
-          if (currentHour < 10) {
+          if (currentHour < CONFIG.SYNC.WORK_END_HOUR) {
             if (document.getElementById('searchInput').value.trim().length === 0) {
               fetchData();
               // console.log("🔄 [동기화 완료] 현재 시간: " + new Date().toLocaleTimeString());
