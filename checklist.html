@@ -700,7 +700,7 @@
           }
           
           var itemWave = wave(cId);
-          const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
+          const prefix = (itemWave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
           const hubStr = UTILS.getHubDisplayName(hub);
           var carInfo = UTILS.escapeHtml(prefix + hubStr + " | " + carN);
           var isBucheon = String(hub).includes("부천3");
