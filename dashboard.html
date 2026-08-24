@@ -215,6 +215,7 @@
         }
       }
     </style>
+    <script src="config.js"></script>
   </head>
   <body>
     
@@ -284,8 +285,12 @@
     </div>
 
     <script>
-      const GAS_URL = "https://script.google.com/macros/s/AKfycbyPol8QpXLKNpiMZ_xJoVlp4TThiQP9m4kD3Ffj8tz9mT7ScJNsUKD_ocmWdJOiv8JJqA/exec";
-      const APP_KEY = sessionStorage.getItem("APP_KEY"); // index.html에서 저장한 키
+      const APP_KEY = UTILS.getAuthKey();
+      const USER_TYPE = UTILS.getUserType();
+      if (!APP_KEY) {
+        alert("인증 정보가 없습니다. 다시 로그인해주세요.");
+        window.location.href = "index.html";
+      }
 
       let wakeLock = null;
       window.syncInterval = null;
@@ -293,11 +298,6 @@
       let isListExpanded = false;
       let lastSheetData = [];
       
-      if (!APP_KEY) {
-        alert("인증 정보가 없습니다. 다시 로그인해주세요.");
-        window.location.href = "index.html";
-      }
-
       window.onerror = function(msg, url, line) {
         var statusMsg = document.getElementById('status-msg');
         if(statusMsg) {
@@ -337,14 +337,14 @@
         window.syncInterval = setInterval(function() {
           var currentHour = new Date().getHours();
           
-          if (currentHour < 10) {
+          if (currentHour < CONFIG.SYNC.WORK_END_HOUR) {
             fetchData();
             console.log("🔄 [동기화 완료] 현재 시간: " + new Date().toLocaleTimeString());
           } else {
             document.getElementById('status-msg').innerText = "⏹️ 2W 근무 종료.. 자동 동기화 중지 (마지막 데이터)";
             stopSyncInterval();
           }
-        }, 30*1000);
+        }, CONFIG.SYNC.DASHBOARD_MS);
       }
 
       function stopSyncInterval() {
@@ -488,8 +488,6 @@
           return;
         }
 
-        const freshHubs = new Set(['인천11', '인천15', '부천2', '인천12', '인천22', '곤지암1']);
-
         const isMobile = window.innerWidth <= 768;
         const displayLimit = 6;
         const shouldShowAll = isMobile || isListExpanded || pendingList.length <= displayLimit;
@@ -499,20 +497,14 @@
         displayCars.forEach((item) => {
           const { hub, wave, carNumber, type } = item;
 
-          const prefix = (wave === "1W") ? "★" : (freshHubs.has(hub) ? "◇" : "");
-          const hubMap = { "부천3": "클러스터", "광주": "경기광주1" };
-          const hubStr = hubMap[hub] || hub;
+          const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
+          const hubStr = UTILS.getHubDisplayName(hub);
 
-          let typeStr = "sioc";
-          if (/신선/.test(type)) typeStr = "fresh";
-          else if (/PB|PICO/.test(type)) typeStr = "pb";
-          else if (/이형/.test(type)) typeStr = "irr";
-
-          const carInfo = escapeHtml(`${prefix}${hubStr} | ${carNumber}`);
+          const carInfo = UTILS.escapeHtml(`${prefix}${hubStr} | ${carNumber}`);
 
           const listItemHTML = `
             <div class="list-item">
-              <span class="type ${typeStr}"><small>${escapeHtml(type)}</small></span>
+              <span class="type ${UTILS.getTypeClassStr(type)}"><small>${UTILS.escapeHtml(type)}</small></span>
               <span class="car-info"><small>${carInfo}</small></span>
             </div>
           `;
@@ -526,7 +518,7 @@
             const moreBtnHTML = `
               <div class="list-item open-extra-btn" onclick="toggleListExpand()">
                 <span class="car-info">
-                  <small>+ ${escapeHtml(remainingCount)}대 대기 중...</small>
+                  <small>+ ${UTILS.escapeHtml(remainingCount)}대 대기 중...</small>
                 </span>
               </div>
             `;
@@ -542,16 +534,6 @@
             listInner.insertAdjacentHTML('beforeend', collapseBtnHTML);
           }
         }
-      }
-
-      function escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        return String(str)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
       }
 
       function updateProgressBar(idPrefix, unloaded, max) {
