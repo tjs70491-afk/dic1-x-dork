@@ -2,7 +2,7 @@
 <html>
   <head>
     <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no interactive-widget=resizes-content">
 
     <link rel="preload" href="./fonts/PretendardGOV-Bold.otf" as="font" type="font/otf" crossorigin />
     
@@ -501,7 +501,8 @@
         </div>
         
         <!-- 카메라 뷰파인더 & 가이드 컨테이너 -->
-        <div id="cameraViewport" onclick="handleFocus(event)" style="position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <div id="cameraViewport" onclick="handleFocus(event)" 
+     style="position: relative; width: 100%; max-height: 65vh; aspect-ratio: 3/4; margin: 0 auto; border-radius: 12px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; cursor: pointer;">
           <!-- 비디오 프리뷰 -->
           <video id="cameraVideo" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
 
@@ -797,11 +798,6 @@
           second: '2-digit',
           hour12: true 
         });
-
-        ctx.shadowColor = '#000000';
-        ctx.shadowBlur = canvas.height / 200;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
       
         function drawText(text, x, y, size, align) {
           ctx.font = `900 ${size}px "PretendardGOV-Bold", sans-serif`;
@@ -820,6 +816,12 @@
         const topFontSize = width * 0.052;
         
         document.fonts.ready.then(function () {
+          
+          ctx.shadowColor = '#000000';
+          ctx.shadowBlur = canvas.height / 200;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+          
           // 상단 좌/우 텍스트
           drawText(leftText, sideMargin, topMargin, topFontSize, "left");
           drawText(carNum, width - sideMargin, topMargin, topFontSize, "right");
@@ -865,8 +867,9 @@
           videoStream = await navigator.mediaDevices.getUserMedia({
             video: {
               facingMode: { ideal: "environment" },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
+              width: { ideal: 1440 },
+              height: { ideal: 1920 },
+              aspectRatio: { ideal: 3 / 4 },
               advanced: [{ focusMode: "continuous" }]
             },
             audio: false
@@ -982,17 +985,18 @@
       
         // 프리뷰와 동일한 3:4 비율 계산
         const targetRatio = 3 / 4;
+        const currentRatio = vw / vh;
         let sWidth, sHeight, sx, sy;
       
         // 비디오 원본 영상에서 3:4 영역만 중앙 크롭 계산
-        if (vw / vh > targetRatio) {
-          // 비디오가 더 가로로 긴 경우 (좌우 자름)
+        if (currentRatio > targetRatio) {
+          // 원본 비디오가 3:4보다 가로로 더 넓은 경우 -> 좌우를 자름 (object-fit: cover와 동일)
           sHeight = vh;
           sWidth = vh * targetRatio;
           sx = (vw - sWidth) / 2;
           sy = 0;
         } else {
-          // 비디오가 더 세로로 긴 경우 (상하 자름)
+          // 원본 비디오가 3:4보다 세로로 더 긴 경우 -> 상하를 자름
           sWidth = vw;
           sHeight = vw / targetRatio;
           sx = 0;
@@ -1001,12 +1005,12 @@
       
         // 최종 저장할 캔버스 (고해상도 3:4 비율: 가로 1080 x 세로 1440 등)
         const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = sWidth;
-        tempCanvas.height = sHeight;
+        tempCanvas.width = 1080;
+        tempCanvas.height = 1440;
         const tempCtx = tempCanvas.getContext('2d');
       
-        // 화면에 보였던 3:4 영역만 정확히 복사
-        tempCtx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+        // 화면에 보인 영역 그대로 1080x1440 캔버스에 리사이징하여 복사
+        tempCtx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, 1080, 1440);
       
         closeCameraModal();
         document.getElementById('uploadOverlay').style.display = 'flex';
