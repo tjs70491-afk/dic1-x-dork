@@ -1040,28 +1040,8 @@
           document.getElementById('uploadOverlay').style.display = 'none';
           
           if(result.status === "success") {
-            const targetItem = document.querySelector(`.list-item[data-car-id="${currentUploadCarId}"]`);
-            if (targetItem) {
-              const carInfoEl = targetItem.querySelector('.car-info');
-              if (carInfoEl && !carInfoEl.textContent.includes('🖼️')) {
-                // small 태그 앞에 🖼️ 추가
-                carInfoEl.insertAdjacentText('afterbegin', '🖼️ ');
-              }
-      
-              // data-info 속성 내부 데이터도 낙관적 갱신
-              try {
-                const infoObj = JSON.parse(decodeURIComponent(targetItem.dataset.info));
-                infoObj.selectedImageID = result.imageId || "OPTIMISTIC_ID";
-                targetItem.dataset.info = encodeURIComponent(JSON.stringify(infoObj));
-              } catch (e) {
-                console.error("data-info 갱신 실패:", e);
-              }
-      
-              // '🖼️ 사진' 퀵 필터 등이 켜져 있을 경우를 대비해 필터 재적용
-              filterList();
-            }
-      
             alert("✅ 사진이 성공적으로 업로드 되었습니다.");
+            fetchData();
           } else {
             alert("❌ 업로드 실패: " + result.message);
           }
