@@ -383,6 +383,7 @@
         font-style: normal;
       }
     </style>
+    <script src="config.js"></script>
   </head>
   <body>
     
@@ -541,10 +542,8 @@
     </div>
 
     <script>
-      const GAS_URL = "https://script.google.com/macros/s/AKfycbyPol8QpXLKNpiMZ_xJoVlp4TThiQP9m4kD3Ffj8tz9mT7ScJNsUKD_ocmWdJOiv8JJqA/exec";
-      const APP_KEY = sessionStorage.getItem("APP_KEY");
-      const USER_TYPE = sessionStorage.getItem("USER_TYPE") || "guest";
-      
+      const APP_KEY = UTILS.getAuthKey();
+      const USER_TYPE = UTILS.getUserType();
       if (!APP_KEY) {
         alert("인증 정보가 없습니다. 다시 로그인해주세요.");
         window.location.href = "index.html";
@@ -1101,7 +1100,7 @@
             document.getElementById('status-msg').innerText = "⏹️ 2W 근무 종료.. 자동 동기화 중지 (마지막 데이터)";
             stopSyncInterval();
           }
-        }, 30*1000);
+        }, CONFIG.SYNC.DASHBOARD_MS));
       }
 
       function stopSyncInterval() {
@@ -1234,48 +1233,21 @@
           return;
         }
 
-        const freshHubs = new Set(['인천11', '인천15', '부천2', '인천12', '인천22', '곤지암1']);
-
         sheetData.forEach((item) => {
           const { carId, hub, type, isArrival, wave, selectedImageID, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, reportRaw, seq } = item;
 
           if (hub.includes("부천3") && !isArrival) return; 
 
-          let prefix = "";
-          if (wave === "1W") {
-            prefix = "★";
-          } else {
-            if (freshHubs.has(hub)) {
-              prefix = "◇";
-            }
-          }
+          const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
+          const hubStr = UTILS.getHubDisplayName(hub);
 
           const hasFile = selectedImageID && selectedImageID.trim() !== "";
           const fileStatusText = hasFile ? "🖼️ " : "";
 
-          const hubMap = {
-            "부천3": "클러스터",
-            "광주": "경기광주1"
-          };
-          const hubStr = hubMap[hub] || hub;
+          const ptNum = Number(pt) || 0;
+          const rtNum = Number(rt) || 0;
 
-          let typeStr = "";
-          switch (true) {
-            case /신선/.test(type):
-              typeStr = "fresh";
-              break;
-            case /PB|PICO/.test(type):
-              typeStr = "pb";
-              break;
-            case /이형/.test(type):
-              typeStr = "irr";
-              break;
-            default:
-              typeStr = "sioc";
-              break;
-          }
-
-          const carInfo = `${prefix}${hubStr} | ${carNumber}`;
+          const carInfo = `${prefix}${hubStr} | ${carNumber}${(ptNum + rtNum > 0) ? ` | ${UTILS.getUnloadingStatus(ptNum, rtNum, 1)}` : ""}`;
           
           let statusText = "미도착";
           let badgeClass = "not-arrived";
@@ -1288,18 +1260,11 @@
             badgeClass = "waiting";
           }
 
-          const ptNum = Number(pt) || 0;
-          const rtNum = Number(rt) || 0;
-
-          let unloadingStatus = [];
-          if (ptNum > 0) unloadingStatus.push(`PT : ${ptNum}개 `);
-          if (rtNum > 0) unloadingStatus.push(`RT : ${rtNum}개 `);
-
           const infoObject = {
             carInfo: carInfo,
             carSeq: seq,
             carStatus: isArrival 
-              ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? unloadingStatus.join(", ") : ""}하차 완료` : ""}` 
+              ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? UTILS.getUnloadingStatus(ptNum, rtNum, 2) : ""}하차 완료` : ""}` 
               : "미도착",
             selectedImageID: selectedImageID || "",
             reportRaw: reportRaw || "-"
@@ -1312,9 +1277,9 @@
                 data-car-id="${carId}" 
                 data-info='${encodedInfo}' 
                 onclick="showDetail(this)">
-              <span class="type ${typeStr}"><small>${escapeHtml(type)}</small></span>
+              <span class="type ${UTILS.getTypeClassStr(type)}"><small>${UTILS.escapeHtml(type)}</small></span>
               <span class="car-info ${isUnloaded ? "text-unloaded" : ""}">
-                ${fileStatusText}<small>${escapeHtml(carInfo)}</small></span>
+                ${fileStatusText}<small>${UTILS.escapeHtml(carInfo)}</small></span>
               <span class="badge ${badgeClass}"><small>${statusText}</small></span>
             </div>
           `;
@@ -1324,17 +1289,7 @@
 
         filterList();
       }
-
-      function escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        return String(str)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
-      }
-
+      
       function updateProgressBar(idPrefix, unloaded, max) {
         document.getElementById(`${idPrefix}-text`).innerText = `${unloaded} / ${max}`;
         
