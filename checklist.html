@@ -304,6 +304,7 @@
       }
       .close-btn:hover { background: #e8eaed; }
     </style>
+    <script src="config.js"></script>
   </head>
   <body>
     <div class="header-area">
@@ -386,25 +387,17 @@
 
     <script>
 
-      const GAS_URL = "https://script.google.com/macros/s/AKfycbyPol8QpXLKNpiMZ_xJoVlp4TThiQP9m4kD3Ffj8tz9mT7ScJNsUKD_ocmWdJOiv8JJqA/exec";
-      const APP_KEY = sessionStorage.getItem("APP_KEY"); // index.html에서 저장한 키
-      
+      const APP_KEY = UTILS.getAuthKey();
+      const USER_TYPE = UTILS.getUserType();
       if (!APP_KEY) {
         alert("인증 정보가 없습니다. 다시 로그인해주세요.");
         window.location.href = "index.html";
       }
 
-      var USER_TYPE = sessionStorage.getItem("USER_TYPE") || "guest";
       if (USER_TYPE === "guest") document.getElementById('qrOpenBtn').style.display = 'none';
 
       var pendingRequests = 0;
       window.syncInterval = null;
-
-      var ICONS = {
-        empty: '<svg class="icon-svg" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="4" stroke="#b0bec5" stroke-width="2" fill="none"/></svg>',
-        checked: '<svg class="icon-svg" viewBox="0 0 24 24" fill="none"><path d="M5.5 13.5L9.5 17.5L18.5 8.5" stroke="#2e7d32" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-        doubleChecked: '<svg class="icon-svg" viewBox="0 0 24 24" fill="none"><path d="M7 8.5L10.5 12L17.5 5" stroke="#2e7d32" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 15L9.5 20L19.5 10" stroke="#2e7d32" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-      };
 
       window.onerror = function(msg, url, line) {
         var statusMsg = document.getElementById('status-msg');
@@ -592,7 +585,7 @@
         
         window.syncInterval = setInterval(function() {
           var currentHour = new Date().getHours();
-          if (currentHour < 10) {
+          if (currentHour < CONFIG.SYNC.WORK_END_HOUR) {
             if (document.getElementById('searchInput').value.trim().length === 0) {
               fetchData();
             }
@@ -600,7 +593,7 @@
             document.getElementById('status-msg').innerText = "⏹️ 2W 근무 종료.. 자동 동기화 중지";
             stopSyncInterval();
           }
-        }, 10000);
+        }, CONFIG.SYNC.CHECKLIST_MS);
       }
 
       function stopSyncInterval() {
@@ -691,8 +684,6 @@
           return 0;
         });
 
-        var freshHubs = new Set(['인천11', '인천15', '부천2', '인천12', '인천22', '곤지암1']);
-
         sortedData.forEach(function(item) {
           var cId = item.cId, rIdx = item.rIdx, hub = item.hub, carN = item.carN, arr = item.arr, unl = item.unl;
 
@@ -709,16 +700,9 @@
             checkIcon = ICONS.checked;
           }
 
-          var prefix = "";
-          if (wave(cId) === "1W") {
-            prefix = "★";
-          } else if (freshHubs.has(hub)) {
-            prefix = "◇";
-          }
-
-          var hubMap = { "부천3": "클러스터", "광주": "경기광주1" };
-          var hubStr = hubMap[hub] || hub;
-          var carInfo = escapeHtml(prefix + hubStr + " | " + carN);
+          const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
+          const hubStr = UTILS.getHubDisplayName(hub);
+          var carInfo = UTILS.escapeHtml(prefix + hubStr + " | " + carN);
           var itemWave = wave(cId);
           var isBucheon = String(hub).includes("부천3");
 
@@ -734,16 +718,6 @@
         });
 
         filterList();
-      }
-
-      function escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        return String(str)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
       }
 
       window.addEventListener('DOMContentLoaded', function() {
