@@ -697,6 +697,20 @@
         }
       }
 
+      function openCameraForCar(event, element) {
+        event.stopPropagation(); // 부모 list-item의 showDetail 실행 방지
+      
+        const listItem = element.closest('.list-item');
+        const carId = listItem.dataset.carId;
+        const info = JSON.parse(decodeURIComponent(listItem.dataset.info));
+      
+        currentUploadCarId = carId;
+        currentUploadCarSeq = info.carSeq;
+        currentUploadCarInfo = info.carInfo;
+      
+        openCameraModal();
+      }
+
       function showDetail(element) {
         const { carId, info } = element.dataset;
         const { carInfo, carSeq, carStatus, selectedImageID, reportRaw } = JSON.parse(decodeURIComponent(info));
@@ -1418,6 +1432,16 @@
               <span class="type ${UTILS.getTypeClassStr(type)}"><small>${UTILS.escapeHtml(type)}</small></span>
               <span class="car-info ${isUnloaded ? "text-unloaded" : ""}">
                 ${fileStatusText}<small>${UTILS.escapeHtml(carInfo)}</small></span>
+              ${(USER_TYPE === "ADMIN") ? `
+                <button type="button" 
+                        onclick="openCameraForCar(event, this)" 
+                        title="사진 촬영"
+                        style="background: transparent; border: none; font-size: clamp(18px, 2.5vh, 28px); margin: 0 4px; padding: 4px; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; transition: transform 0.1s;"
+                        onmousedown="this.style.transform='scale(0.85)'" 
+                        onmouseup="this.style.transform='scale(1)'">
+                  📸
+                </button>
+              ` : ""}
               <span class="badge ${badgeClass}"><small>${statusText}</small></span>
             </div>
           `;
