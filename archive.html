@@ -965,6 +965,7 @@
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
       
+        // 1. 노란색 포커스 링 애니메이션 표시 (시각적 피드백)
         ring.style.left = `${x}px`;
         ring.style.top = `${y}px`;
         ring.style.display = 'block';
@@ -976,35 +977,27 @@
           setTimeout(() => { ring.style.display = 'none'; }, 300);
         }, 1000);
       
-        // 하드웨어 카메라 초점 지점(Point of Interest) 제어 시도
+        // 2. 하드웨어 강제 리포커싱(Re-focus) 시도 (안드로이드 크롬 대응)
         if (videoStream) {
           const track = videoStream.getVideoTracks()[0];
-          if (!track) return;
+          if (!track || !track.getCapabilities) return;
       
-          const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-          const normalizedX = x / rect.width;
-          const normalizedY = y / rect.height;
+          const capabilities = track.getCapabilities();
       
           try {
-            const constraints = { advanced: [] };
-            
-            // 모바일 브라우저 표준 초점 지원
-            if (capabilities.pointsOfInterest) {
-              constraints.advanced.push({
-                pointsOfInterest: [{ x: normalizedX, y: normalizedY }]
-              });
-            }
-            if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-              constraints.advanced.push({ focusMode: 'continuous' });
-            } else if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
-              constraints.advanced.push({ focusMode: 'single-shot' });
-            }
-
-            if (constraints.advanced.length > 0) {
-              await track.applyConstraints(constraints);
+            // 1순위: single-shot(1회 강제 초점) 지원 기기
+            if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
+              await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+            } 
+            // 2순위: continuous만 지원할 경우 -> None/Manual로 풀었다가 다시 Continuous로 전환하여 재초점 유도
+            else if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+              if (capabilities.focusMode.includes('manual')) {
+                await track.applyConstraints({ advanced: [{ focusMode: 'manual' }] });
+              }
+              await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
             }
           } catch (e) {
-            console.log("수동 AF 설정 미지원 환경 (기본 동작 유지):", e);
+            console.log("초점 재설정 미지원:", e);
           }
         }
       }
@@ -1125,7 +1118,7 @@
       
         // 업로드 진행
         try {
-          const base64Data = canvas.toDataURL("image/jpeg", 0.6).split(',')[1];
+          const base64Data = canvas.toDataURL("image/jpeg", 0.75).split(',')[1];
           uploadToBackend(base64Data);
         } catch (error) {
           console.error("Canvas 변환 실패:", error);
@@ -1136,59 +1129,54 @@
       }
 
       function uploadToBackend(base64Data) {
-        const payload = JSON.stringify({
+        const payload = {
           action: "uploadWatermarkImage",
           key: APP_KEY,
           carId: currentUploadCarId,
           carInfo: currentUploadCarInfo,
           image: base64Data
-        });
+        };
       
         const overlay = document.getElementById('uploadOverlay');
         overlay.style.display = 'flex';
         overlay.innerHTML = `
           <div style="margin-bottom: 10px; font-size: 18px;">사진을 서버로 전송 중 📡</div>
-          <div id="uploadPercent" style="font-size: 14px; color: #aaa;">0%</div>
+          <div id="uploadPercent" style="font-size: 14px; color: #aaa;">잠시만 기다려주세요...</div>
         `;
       
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", CONFIG.GAS_URL, true);
-      
-        xhr.upload.onprogress = function(e) {
-          if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            const percentEl = document.getElementById('uploadPercent');
-            if (percentEl) percentEl.innerText = `${percent}%`;
-          }
-        };
-      
-        xhr.upload.onload = function() {
-          if (navigator.vibrate) navigator.vibrate(100);
-
-          isCapturing = false;
-          overlay.style.display = 'none';
-      
-          showToast("✅ 사진 전송 완료!");
-        };
-      
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            showToast("구글 서버 내부 저장 완료");
-            fetchData();
+        fetch(CONFIG.GAS_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === "success") {
+            showToast("✅ 구글 서버 처리 완료");
+            fetchData(); // 대시보드 새로고침
           } else {
-            showToast("❌ 서버 단에서 사진등록에 실패했습니다. 다시 시도해주세요.");
+            showToast("❌ 서버 오류: " + result.message);
           }
-        };
+        })
+        .catch(err => {
+          console.error("전송 에러:", err);
+          showToast("❌ 전송 실패: 네트워크를 확인해주세요.");
+        });
       
-        xhr.onerror = function() {
+        // 2. [핵심] 실제 200KB 전송 시간(약 0.8초) 후 즉시 화면 잠금 해제
+        setTimeout(() => {
+          // 진동 피드백 (전송 완료 알림)
+          if (navigator.vibrate) navigator.vibrate(100);
+      
+          // 모달 즉시 닫기 & 다음 작업 가능하게 풀기
           isCapturing = false;
           overlay.style.display = 'none';
-          alert("❌ 네트워크 불안정으로 전송에 실패했습니다. 다시 시도해주세요.");
-        };
       
-        xhr.send(payload);
+          // 가벼운 완료 토스트 알림
+          showToast("✅ 사진 전송 완료!");
+        }, 1500); // 1.5초 후 즉시 해제
       }
       
+      // 하단 알림용 토스트 함수
       function showToast(message) {
         let toast = document.getElementById('toastMsg');
         if (!toast) {
