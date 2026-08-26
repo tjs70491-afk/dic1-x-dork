@@ -19,25 +19,28 @@
         .then(res => res.json())
         .then(res => {
           if (res.status === "error") {
-            // 키가 만료/폐기된 경우 저장소 비우기
+            // 키가 만료/폐기된 경우 저장값 비우기
             localStorage.removeItem("APP_KEY");
             localStorage.removeItem("USER_TYPE");
+            document.cookie = "APP_KEY=; path=/; max-age=0";
             document.body.innerHTML = `<h2>${res.message}</h2>`;
             return;
           }
           
           const userType = res.userType;
+          UTILS.setAuthKey(APP_KEY);
           localStorage.setItem("USER_TYPE", userType); 
   
           let targetPage = urlParams.get('p') || 'dashboard';
+          let nextPage = "dashboard.html";
   
           if (CONFIG.PERMISSIONS.checklist.includes(userType) && targetPage === 'checklist') {
-            window.location.replace("checklist.html");
+            nextPage = "checklist.html";
           } else if (CONFIG.PERMISSIONS.archive.includes(userType) && targetPage === 'archive') {
-            window.location.replace("archive.html");
-          } else {
-            window.location.replace("dashboard.html");
+            nextPage = "archive.html";
           }
+          
+          window.location.replace(`${nextPage}?key=${encodeURIComponent(APP_KEY)}`);
         })
         .catch(err => {
           document.body.innerHTML = "<h2>서버 통신 오류가 발생했습니다.</h2>";
