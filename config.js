@@ -1,5 +1,5 @@
 const CONFIG = {
-  // 1. 구글 앱스 스크립트 배포 URL (이곳 1개만 수정하면 전체 반영)
+  // 1. 구글 앱스 스크립트 배포 URL
   GAS_URL: "https://script.google.com/macros/s/AKfycbx2XhmbMmbn3GazWjFUYMBgqd2UUBaXT5I-3biOMdaHh5NnV6kPYEZ55hT0pD8bop9UvA/exec",
 
   // 2. 허브 이름 치환 규칙
@@ -45,12 +45,39 @@ const UTILS = {
       .replace(/'/g, '&#039;');
   },
 
-  // 인증 키 로드 및 갱신 (URL 파라미터 우선 -> localStorage 확인)
+  // 인증 키 로드 및 갱신
   getAuthKey: function() {
     const urlParams = new URLSearchParams(window.location.search);
-    const key = urlParams.get('key') || localStorage.getItem("APP_KEY");
-    if (key) localStorage.setItem("APP_KEY", key);
-    return key;
+    let key = urlParams.get('key');
+
+    // 1) URL에 key가 있다면 최우선 적용 및 스토리지/쿠키에 동기화
+    if (key) {
+      this.setAuthKey(key);
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+      return key;
+    }
+
+    // 2) URL에 없다면 localStorage 확인
+    key = localStorage.getItem("APP_KEY");
+    if (key) return key;
+
+    // 3) localStorage에도 없다면 Cookie 확인 (사파리/인앱브라우저 대비)
+    const match = document.cookie.match(new RegExp('(^| )APP_KEY=([^;]+)'));
+    if (match) {
+      key = match[2];
+      localStorage.setItem("APP_KEY", key); // localStorage 복구
+      return key;
+    }
+
+    return null;
+  },
+  
+  // 키를 다중 스토리지에 저장하는 함수, 쿠키는 30일
+  setAuthKey: function(key) {
+    if (!key) return;
+    localStorage.setItem("APP_KEY", key);
+    document.cookie = `APP_KEY=${key}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
   },
 
   // 사용자 권한 로드
