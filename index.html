@@ -33,6 +33,11 @@
   
           let targetPage = urlParams.get('p') || 'dashboard';
           let nextPage = "dashboard.html";
+
+          console.log("받아온 userType:", userType);
+          console.log("목표 targetPage:", targetPage);
+          console.log("체크리스트 권한 포함 여부:", CONFIG.PERMISSIONS.checklist.includes(userType));
+          console.log("아카이브 권한 포함 여부:", CONFIG.PERMISSIONS.archive.includes(userType));
   
           if (CONFIG.PERMISSIONS.checklist.includes(userType) && targetPage === 'checklist') {
             nextPage = "checklist.html";
