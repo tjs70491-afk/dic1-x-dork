@@ -523,7 +523,18 @@
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <span style="font-size: 15px; font-weight: bold; color: #aaa;">📸 접안 사진 촬영</span>
-          <span class="close-btn" onclick="closeCameraModal()" style="color: #fff; position: static; font-size: 28px; line-height: 1;">&times;</span>
+
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="toggleCarSeqBtn" type="button" onclick="toggleIncludeCarSeq()" 
+                style="background: #333; color: #fff; border: 1px solid #666; border-radius: 20px; padding: 4px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <span id="toggleCarSeqText">호차 ON</span>
+            </button>
+            <button id="toggleCarNumBtn" type="button" onclick="toggleIncludeCarNum()" 
+                style="background: #333; color: #fff; border: 1px solid #666; border-radius: 20px; padding: 4px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <span id="toggleCarNumText">차량번호 ON</span>
+            </button>
+            <span class="close-btn" onclick="closeCameraModal()" style="color: #fff; position: static; font-size: 28px; line-height: 1;">&times;</span>
+          </div>
         </div>
         
         <!-- 카메라 뷰파인더 & 가이드 컨테이너 -->
@@ -580,6 +591,9 @@
       let currentUploadCarId = "";
       let currentUploadCarInfo = "";
       let currentUploadCarSeq = "";
+
+      let includeCarNumber = true;
+      let includeCarSeq = true;
 
       let videoStream = null;
       let cameraGuideTimer = null;
@@ -830,6 +844,22 @@
         const modal = document.getElementById('cameraModal');
         const video = document.getElementById('cameraVideo');
         const captureBtn = document.getElementById('captureBtn');
+
+        includeCarNumber = true;
+        const nbtn = document.getElementById('toggleCarNumBtn');
+        if (nbtn) {
+          nbtn.style.background = '#333';
+          nbtn.style.borderColor = '#666';
+          document.getElementById('toggleCarNumText').innerText = '차량번호 ON';
+        }
+
+        includeCarSeq = true;
+        const sbtn = document.getElementById('toggleCarSeqBtn');
+        if (sbtn) {
+          sbtn.style.background = '#333';
+          sbtn.style.borderColor = '#666';
+          document.getElementById('toggleCarSeqText').innerText = '호차 ON';
+        }
   
         isCapturing = false;
         modal.style.display = 'flex';
@@ -872,6 +902,44 @@
         }
       }
 
+      function toggleIncludeCarNum() {
+        includeCarNumber = !includeCarNumber;
+        
+        const btn = document.getElementById('toggleCarNumBtn');
+        const text = document.getElementById('toggleCarNumText');
+        
+        if (includeCarNumber) {
+          btn.style.background = '#333';
+          btn.style.borderColor = '#666';
+          text.innerText = '차량번호 ON';
+        } else {
+          btn.style.background = '#d93025';
+          btn.style.borderColor = '#ea4335';
+          text.innerText = '차량번호 OFF';
+        }
+        
+        updateCameraGuideUI();
+      }
+
+      function toggleIncludeCarSeq() {
+        includeCarSeq = !includeCarSeq;
+        
+        const btn = document.getElementById('toggleCarSeqBtn');
+        const text = document.getElementById('toggleCarSeqText');
+        
+        if (includeCarSeq) {
+          btn.style.background = '#333';
+          btn.style.borderColor = '#666';
+          text.innerText = '호차 ON';
+        } else {
+          btn.style.background = '#d93025';
+          btn.style.borderColor = '#ea4335';
+          text.innerText = '호차 OFF';
+        }
+        
+        updateCameraGuideUI();
+      }
+
       function updateCameraGuideUI() {
         const now = new Date();
         
@@ -879,10 +947,10 @@
         const parts = currentUploadCarInfo.split('|').map(s => s.trim());
         const hub = parts[0] || "";
         const carNum = parts[1] || "";
-        const carSeq = (hub !== "") ? `${currentUploadCarSeq}호차` : "";
+        const carSeq = (hub !== "" && includeCarSeq) ? `${currentUploadCarSeq}호차` : "";
         
         document.getElementById('guideTopLeft').innerText = `${hub}  ${carSeq}`;
-        document.getElementById('guideTopRight').innerText = carNum;
+        document.getElementById('guideTopRight').innerText = includeCarNumber ? carNum : "";
       
         // 2. 하단 날짜 포맷 (캔버스 로직과 일치: YYYY년 M월 D일 (요일))
         const datePart = now.toLocaleDateString('ko-KR', {
@@ -1068,7 +1136,7 @@
         const parts = currentUploadCarInfo.split('|').map(s => s.trim());
         const hub = parts[0] || "";
         const carNum = parts[1] || "";
-        const carSeq = (hub !== "") ? `${currentUploadCarSeq}호차` : "";
+        const carSeq = (hub !== "" && includeCarSeq) ? `${currentUploadCarSeq}호차` : "";
         const leftText = `${hub}  ${carSeq}`;
         
         const dateText = `${now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })} (${now.toLocaleDateString('ko-KR', { weekday: 'short' })})`;
@@ -1112,8 +1180,10 @@
         ctx.fillText(leftText, marginX, marginTop);
       
         // 4. 차량 번호 (우상단)
-        ctx.textAlign = "right";
-        ctx.fillText(carNum, width - marginX, marginTop);
+        if (includeCarNumber && carNum) {
+          ctx.textAlign = "right";
+          ctx.fillText(carNum, width - marginX, marginTop);
+        }
         ctx.restore();
       
         // 업로드 진행
@@ -1270,9 +1340,16 @@
           window.syncInterval = null;
         }
       }
-
+      
       function fetchData() {
         document.getElementById('status-msg').innerText = "데이터 동기화 중...";
+      
+        const cachedData = localStorage.getItem("CACHED_DASHBOARD_DATA");
+        if (cachedData) {
+          try {
+            updateUI(JSON.parse(cachedData));
+          } catch(e) {}
+        }
       
         fetch(`${CONFIG.GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
           .then(response => response.json())
@@ -1281,7 +1358,8 @@
               document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
               return;
             }
-            updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
+            localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
+            updateUI(result.data);
           })
           .catch(error => {
             document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
@@ -1380,6 +1458,8 @@
           return;
         }
 
+        const listItemsHTML = [];
+
         sheetData.forEach((item) => {
           const { carId, hub, type, isArrival, wave, selectedImageID, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, reportRaw, seq } = item;
 
@@ -1419,7 +1499,7 @@
 
           const encodedInfo = encodeURIComponent(JSON.stringify(infoObject));
 
-          const listItemHTML = `
+          listItemsHTML.push(`
             <div class="list-item ${badgeClass}" 
                 data-car-id="${carId}" 
                 data-info='${encodedInfo}' 
@@ -1439,11 +1519,10 @@
               ` : ""}
               <span class="badge ${badgeClass}"><small>${statusText}</small></span>
             </div>
-          `;
-          
-          listInner.insertAdjacentHTML('beforeend', listItemHTML);
+          `);
         });
-
+        
+        listInner.innerHTML = listItemsHTML.join('');
         filterList();
       }
       
