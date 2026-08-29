@@ -41,7 +41,7 @@
           UTILS.setAuthKey(APP_KEY);
           localStorage.setItem("USER_TYPE", userType); 
   
-          let targetPage = getParamFromUrl('p') || 'dashboard';
+          let targetPage = UTILS.getParamFromUrl('p') || 'dashboard';
           let nextPage = "dashboard.html";
           
 
