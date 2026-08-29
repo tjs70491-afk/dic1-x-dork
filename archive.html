@@ -21,8 +21,43 @@
       }
       
       .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
+      .header-right { display: flex; align-items: center; gap: 8px; }
       h1 { margin: 0; font-size: clamp(32px, 4vh, 50px); color: #1a73e8; }
       .status-text { font-size: clamp(16px, 2vh, 25px); color: #666; background: #e1f3f4; padding: 5px 15px; border-radius: 20px; }
+
+      .refresh-btn {
+        background: #ffffff;
+        border: 1px solid #dadce0;
+        border-radius: 50%;
+        width: clamp(34px, 4vh, 44px);
+        height: clamp(34px, 4vh, 44px);
+        font-size: clamp(16px, 2.2vh, 22px);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        transition: all 0.2s ease;
+        padding: 0;
+        user-select: none;
+      }
+      .refresh-btn:hover {
+        background: #e8f0fe;
+        border-color: #1a73e8;
+        transform: scale(1.05);
+      }
+      .refresh-btn:active {
+        transform: scale(0.95);
+      }
+      .refresh-btn.spinning {
+        animation: spin 0.8s linear infinite;
+        pointer-events: none;
+        opacity: 0.7;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
 
       .main-container { 
         display: flex; 
@@ -376,7 +411,6 @@
           margin-bottom: 15px;
         }
         .status-text {
-          align-self: center;
           font-size: clamp(14px, 3.5vw, 18px);
         }
         .main-container { 
@@ -415,7 +449,10 @@
     
     <div class="header-area">
       <h1>🚚 2W 간선 하차 현황</h1>
-      <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
+      <div class="header-right">
+        <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
+        <button id="refreshBtn" class="refresh-btn" type="button" onclick="fetchData()" title="데이터 새로고침">🔄</button>
+      </div>
     </div>
 
     <div class="main-container">
@@ -478,6 +515,8 @@
             <button type="button" class="filter-btn" onclick="applyQuickFilter('이형')">이형</button>
             <button type="button" class="filter-btn" onclick="applyQuickFilter('대기중')">대기중</button>
             <button type="button" class="filter-btn" onclick="applyQuickFilter('미도착')">미도착</button>
+            <button type="button" class="filter-btn" onclick="applyQuickFilter('클러스터')">클러스터</button>
+            <button type="button" class="filter-btn" onclick="applyQuickFilter('SF부천3')">SF부천3</button>
             <button type="button" class="filter-btn reset-btn" onclick="applyQuickFilter('')">초기화</button>
           </div>
         </div>
@@ -586,8 +625,6 @@
         window.location.replace("index.html");
       }
 
-      window.syncInterval = null;
-
       let currentUploadCarId = "";
       let currentUploadCarInfo = "";
       let currentUploadCarSeq = "";
@@ -613,20 +650,16 @@
         }
       });
 
+      // 페이지 로드 시 1회 데이터 호출
       window.addEventListener('DOMContentLoaded', function() {
-        setTimeout(checkWorkTimeAndSync, 500);
+        fetchData();
       });
 
-      document.addEventListener('visibilitychange', async () => {
+      document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-          stopSyncInterval();
           if (document.getElementById('cameraModal').style.display === 'flex') {
             closeCameraModal();
           }
-          // console.log("⏸️ 백그라운드 진입: 구글 서버 호출 일시정지");
-        } else {
-          // console.log("▶️ 화면 복귀: 동기화 및 Wake Lock 상태 재점검");
-          checkWorkTimeAndSync(); 
         }
       });
 
@@ -863,7 +896,7 @@
   
         isCapturing = false;
         modal.style.display = 'flex';
-        captureBtn.style.display = 'none'; // 로딩 중에는 잠시 숨김
+        captureBtn.style.display = 'none';
         updateCameraGuideUI();
         
         if (cameraGuideTimer) clearInterval(cameraGuideTimer);
@@ -881,14 +914,12 @@
           });
           
           video.srcObject = videoStream;
-          // 모바일 자동재생 보장
           video.onloadedmetadata = () => {
             video.play().then(() => {
               captureBtn.style.display = 'block';
             }).catch(e => console.log("비디오 재생 대기:", e));
           };
       
-          // 초점 모드 시도 (지원 기기만)
           const track = videoStream.getVideoTracks()[0];
           if (track && track.getCapabilities) {
             const caps = track.getCapabilities();
@@ -943,7 +974,6 @@
       function updateCameraGuideUI() {
         const now = new Date();
         
-        // 1. 상단 정보
         const parts = currentUploadCarInfo.split('|').map(s => s.trim());
         const hub = parts[0] || "";
         const carNum = parts[1] || "";
@@ -952,7 +982,6 @@
         document.getElementById('guideTopLeft').innerText = `${hub}  ${carSeq}`;
         document.getElementById('guideTopRight').innerText = includeCarNumber ? carNum : "";
       
-        // 2. 하단 날짜 포맷 (캔버스 로직과 일치: YYYY년 M월 D일 (요일))
         const datePart = now.toLocaleDateString('ko-KR', {
           year: 'numeric',
           month: 'long',
@@ -963,7 +992,6 @@
         });
         const dateText = `${datePart} (${weekdayPart})`;
       
-        // 3. 하단 시간 포맷 (오전/오후 HH:MM:SS)
         const timeText = now.toLocaleTimeString('ko-KR', { 
           hour: '2-digit', 
           minute: '2-digit', 
@@ -977,23 +1005,19 @@
         const viewport = document.getElementById('cameraViewport');
         if (!viewport) return;
       
-        // 실제 화면에 그려진 프리뷰 컨테이너의 픽셀 크기 측정
         const width = viewport.clientWidth;
         const height = viewport.clientHeight;
       
-        // --- canvas 로직의 변수 계산 공식과 100% 동일하게 매칭 ---
         const topMargin = height * 0.025;
         const sideMargin = width * 0.05;
         const marginBottom = height * 0.055;
       
-        const topFontSize = height * 0.04; // canvas의 carInfoTextSize (height * 0.04) 적용
-        const timeFontSize = height * 0.11; // canvas의 timeTextSize
-        const dateFontSize = height * 0.04; // canvas의 dateTextSize
+        const topFontSize = height * 0.04;
+        const timeFontSize = height * 0.11;
+        const dateFontSize = height * 0.04;
       
-        // canvas 하단 날짜 간격 보정용 (텍스트 높이 계산 대체)
         const dateMarginBottom = timeFontSize * 0.15; 
       
-        // CSS 변수 적용 대상 레이어
         const guide = document.getElementById('watermarkGuide');
         
         guide.style.setProperty('--top-margin', `${topMargin}px`);
@@ -1006,7 +1030,7 @@
         guide.style.setProperty('--date-margin-bottom', `${dateMarginBottom}px`);
       }
       
-      // 2. 카메라 팝업 닫기 & 스트림 중지 (배터리/자원 절약)
+      // 2. 카메라 팝업 닫기 & 스트림 중지
       function closeCameraModal() {
         const modal = document.getElementById('cameraModal');
         const video = document.getElementById('cameraVideo');
@@ -1033,7 +1057,6 @@
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
       
-        // 1. 노란색 포커스 링 애니메이션 표시 (시각적 피드백)
         ring.style.left = `${x}px`;
         ring.style.top = `${y}px`;
         ring.style.display = 'block';
@@ -1045,7 +1068,6 @@
           setTimeout(() => { ring.style.display = 'none'; }, 300);
         }, 1000);
       
-        // 2. 하드웨어 강제 리포커싱(Re-focus) 시도 (안드로이드 크롬 대응)
         if (videoStream) {
           const track = videoStream.getVideoTracks()[0];
           if (!track || !track.getCapabilities) return;
@@ -1053,11 +1075,9 @@
           const capabilities = track.getCapabilities();
       
           try {
-            // 1순위: single-shot(1회 강제 초점) 지원 기기
             if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
               await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
             } 
-            // 2순위: continuous만 지원할 경우 -> None/Manual로 풀었다가 다시 Continuous로 전환하여 재초점 유도
             else if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
               if (capabilities.focusMode.includes('manual')) {
                 await track.applyConstraints({ advanced: [{ focusMode: 'manual' }] });
@@ -1072,8 +1092,7 @@
       
       // 3. 현재 프리뷰 화면 캡처 및 워터마크 함수 호출
       async function capturePhoto() {
-
-        if (isCapturing) return; // [추가] 중복 방지
+        if (isCapturing) return;
         isCapturing = true;
       
         const video = document.getElementById('cameraVideo');
@@ -1084,11 +1103,10 @@
         
         const vw = video.videoWidth;
         const vh = video.videoHeight;
-        const targetRatio = 3 / 4; // 세로 모드 기준 (너비/높이)
+        const targetRatio = 3 / 4;
         
         let sWidth, sHeight, sx, sy;
       
-        // 비디오 원본 비율에 따른 3:4 중앙 크롭 계산
         if (vw / vh > targetRatio) {
           sHeight = vh;
           sWidth = vh * targetRatio;
@@ -1106,14 +1124,11 @@
         canvas.width = 1080;
         canvas.height = 1440;
       
-        // 1. 영상 프레임 캡처
         ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
       
-        // 2. 스트림 종료 및 UI 전환
         closeCameraModal();
         document.getElementById('uploadOverlay').style.display = 'flex';
       
-        // 3. 폰트 로드 대기 후 워터마크 합성 및 전송
         try {
           await Promise.race([
             document.fonts.ready,
@@ -1157,7 +1172,6 @@
         const dateTextSize = height * 0.04;
         const topTextSize = height * 0.04;
       
-        // 하단 텍스트 기준선 설정
         ctx.textBaseline = "bottom";
         
         // 1. 시간
@@ -1171,22 +1185,20 @@
         const yDate = yTime - (timeTextSize * 1.05);
         ctx.fillText(dateText, marginX, yDate);
       
-        // 상단 텍스트 기준선 설정
         ctx.textBaseline = "top";
         ctx.font = `${topTextSize}px "PretendardGOV-Bold", sans-serif`;
         
-        // 3. 차량 허브/호차 정보 (좌상단)
+        // 3. 허브/호차 정보
         ctx.textAlign = "left";
         ctx.fillText(leftText, marginX, marginTop);
       
-        // 4. 차량 번호 (우상단)
+        // 4. 차량 번호
         if (includeCarNumber && carNum) {
           ctx.textAlign = "right";
           ctx.fillText(carNum, width - marginX, marginTop);
         }
         ctx.restore();
       
-        // 업로드 진행
         try {
           const base64Data = canvas.toDataURL("image/jpeg", 0.9).split(',')[1];
           uploadToBackend(base64Data);
@@ -1207,7 +1219,6 @@
         `;
       
         try {
-          // 1단계: 사진 드라이브 저장
           const res1 = await fetch(CONFIG.GAS_URL, {
             method: "POST",
             body: JSON.stringify({
@@ -1229,7 +1240,6 @@
           overlay.style.display = 'none';
           showToast("✅ 사진 저장 완료!");
       
-          // 2단계: 앱시트 동기화
           fetch(CONFIG.GAS_URL, {
             method: "POST",
             keepalive: true,
@@ -1242,7 +1252,7 @@
           .then(res => res.json())
           .then(result2 => {
             console.log("✅ 백그라운드 앱시트 연동 완료:", result2);
-            fetchData(); // 대시보드 조용히 새로고침
+            fetchData();
           })
           .catch(err => console.error("앱시트 연동 에러:", err));
       
@@ -1253,7 +1263,6 @@
         }
       }
       
-      // 하단 알림용 토스트 함수
       function showToast(message) {
         let toast = document.getElementById('toastMsg');
         if (!toast) {
@@ -1304,45 +1313,12 @@
             });
       }
 
-      function checkWorkTimeAndSync() {
-        fetchData();
-        stopSyncInterval();
-
-        if (document.hidden) {
-          // console.log("⏸️ 화면이 숨겨져 있어 자동 동기화 예약을 대기합니다.");
-          return;
-        }
-
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput && searchInput.value.trim().length > 0) {
-          // console.log("⏸️ 차량 검색 중이므로 자동 동기화를 대기합니다.");
-          return;
-        }
-        
-        window.syncInterval = setInterval(function() {
-          var currentHour = new Date().getHours();
-          
-          if (currentHour < CONFIG.SYNC.WORK_END_HOUR) {
-            if (document.getElementById('searchInput').value.trim().length === 0) {
-              fetchData();
-              // console.log("🔄 [동기화 완료] 현재 시간: " + new Date().toLocaleTimeString());
-            }
-          } else {
-            document.getElementById('status-msg').innerText = "⏹️ 2W 근무 종료.. 자동 동기화 중지 (마지막 데이터)";
-            stopSyncInterval();
-          }
-        }, CONFIG.SYNC.DASHBOARD_MS);
-      }
-
-      function stopSyncInterval() {
-        if (window.syncInterval) {
-          clearInterval(window.syncInterval);
-          window.syncInterval = null;
-        }
-      }
-      
       function fetchData() {
-        document.getElementById('status-msg').innerText = "데이터 동기화 중...";
+        const refreshBtn = document.getElementById('refreshBtn');
+        const statusMsg = document.getElementById('status-msg');
+        
+        statusMsg.innerText = "데이터 동기화 중...";
+        if (refreshBtn) refreshBtn.classList.add('spinning');
       
         const cachedData = localStorage.getItem("CACHED_DASHBOARD_DATA");
         if (cachedData) {
@@ -1355,14 +1331,17 @@
           .then(response => response.json())
           .then(result => {
             if (result.status === "error") {
-              document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
+              statusMsg.innerText = "❌ 인증 오류: " + result.message;
               return;
             }
             localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
             updateUI(result.data);
           })
           .catch(error => {
-            document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
+            statusMsg.innerText = "❌ 서버 에러: " + error.message;
+          })
+          .finally(() => {
+            if (refreshBtn) refreshBtn.classList.remove('spinning');
           });
       }
 
@@ -1374,7 +1353,7 @@
           String(now.getMinutes()).padStart(2, '0'),
           String(now.getSeconds()).padStart(2, '0')
         ].join(':');
-        document.getElementById('status-msg').innerText = `✅ 마지막 업데이트: ${timeStr}`;
+        document.getElementById('status-msg').innerText = `✅ 조회 시간: ${timeStr}`;
 
         const isNotBucheon = (hub) => !String(hub).includes("부천3");
 
@@ -1395,7 +1374,7 @@
             acc.max2WLength++;
             if (isUnloaded) acc.unloaded2WLength++;
             else {
-              if (/SIOC|복합|신선/.test(type)) acc.siocCount2W++; // else문 내 기존 filter 조건 반영
+              if (/SIOC|복합|신선/.test(type)) acc.siocCount2W++;
               if (/PB/.test(type)) acc.pbCount2W++;
               if (/이형/.test(type)) acc.irrCount2W++;
             }
@@ -1463,8 +1442,6 @@
         sheetData.forEach((item) => {
           const { carId, hub, type, isArrival, wave, selectedImageID, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, reportRaw, seq } = item;
 
-          // if (hub.includes("부천3") && !isArrival) return; 
-
           const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
           const hubStr = UTILS.getHubDisplayName(hub);
 
@@ -1506,17 +1483,17 @@
                 onclick="showDetail(this)">
               <span class="type ${UTILS.getTypeClassStr(type)}"><small>${UTILS.escapeHtml(type)}</small></span>
               <span class="car-info ${isUnloaded ? "text-unloaded" : ""}">
+                ${(USER_TYPE === "ADMIN") ? `
+                  <button type="button" 
+                          onclick="openCameraForCar(event, this)" 
+                          title="사진 촬영"
+                          style="background: transparent; border: none; font-size: clamp(18px, 2.5vh, 28px); margin: 0 4px; padding: 4px; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; transition: transform 0.1s;"
+                          onmousedown="this.style.transform='scale(0.85)'" 
+                          onmouseup="this.style.transform='scale(1)'">
+                    📸
+                  </button>
+                ` : ""}
                 ${fileStatusText}<small>${UTILS.escapeHtml(carInfo)}</small></span>
-              ${(USER_TYPE === "ADMIN") ? `
-                <button type="button" 
-                        onclick="openCameraForCar(event, this)" 
-                        title="사진 촬영"
-                        style="background: transparent; border: none; font-size: clamp(18px, 2.5vh, 28px); margin: 0 4px; padding: 4px; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; transition: transform 0.1s;"
-                        onmousedown="this.style.transform='scale(0.85)'" 
-                        onmouseup="this.style.transform='scale(1)'">
-                  📸
-                </button>
-              ` : ""}
               <span class="badge ${badgeClass}"><small>${statusText}</small></span>
             </div>
           `);
