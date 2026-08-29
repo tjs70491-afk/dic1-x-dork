@@ -34,6 +34,14 @@ const CONFIG = {
 
 // 7. 모든 페이지에서 공통으로 쓰는 유틸리티 헬퍼
 const UTILS = {
+  getParamFromUrl: function(name) {
+    const url = window.location.href;
+    const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+    const results = regex.exec(url);
+    if (!results || !results[2]) return null;
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+  }
+  
   // XSS 방지 HTML escape
   escapeHtml: function(str) {
     if (str === null || str === undefined) return '';
