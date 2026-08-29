@@ -55,8 +55,7 @@ const UTILS = {
 
   // 인증 키 로드 및 갱신
   getAuthKey: function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let key = urlParams.get('key');
+    let key = this.getParamFromUrl('key');
 
     // 1) URL에 key가 있다면 최우선 적용 및 스토리지/쿠키에 동기화
     if (key) {
