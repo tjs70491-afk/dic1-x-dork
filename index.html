@@ -8,6 +8,7 @@
 <body>
   <h2>인증 정보를 확인하고 있습니다...</h2>
   <div id="access-info" style="display: none;">
+    <p id="url-str"></p>
     <p id="user-type"></p>
     <p id="target-page"></p>
     <p id="has-checklist-perm"></p>
@@ -18,6 +19,8 @@
   <script>
     const APP_KEY = UTILS.getAuthKey();
     const urlParams = new URLSearchParams(window.location.search);
+
+    document.getElementById("url-str").innerText = `전체 URL: ${window.location.href} \n쿼리스트링(search): ${window.location.search}`;
     
     if (!APP_KEY) {
       document.body.innerHTML = "<h2>접근 불가: 보안 키가 없습니다.</h2>";
@@ -39,7 +42,7 @@
           UTILS.setAuthKey(APP_KEY);
           localStorage.setItem("USER_TYPE", userType); 
   
-          let targetPage = urlParams.get('p') || 'dashboard';
+          let targetPage = getParamFromUrl('p') || 'dashboard';
           let nextPage = "dashboard.html";
           
 
