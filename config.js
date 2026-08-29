@@ -40,7 +40,7 @@ const UTILS = {
     const results = regex.exec(url);
     if (!results || !results[2]) return null;
     return decodeURIComponent(results[2].replace(/\+/g, ' '));
-  }
+  },
   
   // XSS 방지 HTML escape
   escapeHtml: function(str) {
