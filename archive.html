@@ -506,9 +506,9 @@
         
         <div class="card search-card">
           <h2>🔎 차량 검색</h2>
-          <input type="text" id="searchInput" onkeyup="filterList()" value="🖼️" placeholder="차량번호 또는 허브명을 입력하세요...">
+          <input type="text" id="searchInput" onkeyup="filterList()" value="" placeholder="차량번호 또는 허브명을 입력하세요...">
           <div class="quick-filter-container">
-            <button type="button" class="filter-btn active" onclick="applyQuickFilter('🖼️')">🖼️ 사진</button>
+            <button type="button" class="filter-btn" onclick="applyQuickFilter('🖼️')">🖼️ 사진</button>
             <button type="button" class="filter-btn" onclick="applyQuickFilter('PB')">PB</button>
             <button type="button" class="filter-btn" onclick="applyQuickFilter('SIOC')">SIOC</button>
             <button type="button" class="filter-btn" onclick="applyQuickFilter('신선')">신선</button>
@@ -653,12 +653,11 @@
 
       // 페이지 로드 시 1회 데이터 호출
       window.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
         if (USER_TYPE === 'X-mover') {
-          const searchInput = document.getElementById('searchInput');
           if (searchInput) searchInput.value = '';
-      
-          const activeBtns = document.querySelectorAll('.quick-filter-container .filter-btn.active');
-          activeBtns.forEach(btn => btn.classList.remove('active'));
+        } else {
+          if (searchInput) searchInput.value = '🖼️';
         }
         
         fetchData();
