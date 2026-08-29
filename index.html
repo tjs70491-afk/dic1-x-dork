@@ -34,28 +34,21 @@
   
           let targetPage = urlParams.get('p') || 'dashboard';
           let nextPage = "dashboard.html";
-          
 
-  
           if (CONFIG.PERMISSIONS.checklist.includes(userType) && targetPage === 'checklist') {
             nextPage = "checklist.html";
           } else if (CONFIG.PERMISSIONS.archive.includes(userType) && targetPage === 'archive') {
             nextPage = "archive.html";
           }
-
-          document.getElementById("access-info").style.display = 'block';
-          document.getElementById("user-type").innerText = `받아온 userType: ${userType}`;
-          document.getElementById("target-page").innerText = `목표 targetPage: ${targetPage}`;
-          document.getElementById("has-checklist-perm").innerText = `체크리스트 권한 포함 여부: ${CONFIG.PERMISSIONS.checklist.includes(userType)}`;
-          document.getElementById("has-archive-perm").innerText = `"아카이브 권한 포함 여부: ${CONFIG.PERMISSIONS.archive.includes(userType)}`;
-          document.getElementById("next-page").innerText = `넘어갈 페이지: ${nextPage}`;
-
+          
           debugger;
           
           window.location.replace(`${nextPage}?key=${encodeURIComponent(APP_KEY)}`);
         })
         .catch(err => {
+          console.error("Fetch 에러 상세:", err);
           document.body.innerHTML = "<h2>서버 통신 오류가 발생했습니다.</h2>";
+          debugger;
         });
     }
   </script>
