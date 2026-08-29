@@ -7,6 +7,14 @@
 </head>
 <body>
   <h2>인증 정보를 확인하고 있습니다...</h2>
+  <div id="access-info" style="display: none;">
+    <p id="user-type"></p>
+    <p id="target-page"></p>
+    <p id="has-checklist-perm"></p>
+    <p id="has-archive-perm"></p>
+    <p id="next-page"></p>
+  </div>
+  
   <script>
     const APP_KEY = UTILS.getAuthKey();
     const urlParams = new URLSearchParams(window.location.search);
@@ -33,17 +41,23 @@
   
           let targetPage = urlParams.get('p') || 'dashboard';
           let nextPage = "dashboard.html";
+          
 
-          console.log("받아온 userType:", userType);
-          console.log("목표 targetPage:", targetPage);
-          console.log("체크리스트 권한 포함 여부:", CONFIG.PERMISSIONS.checklist.includes(userType));
-          console.log("아카이브 권한 포함 여부:", CONFIG.PERMISSIONS.archive.includes(userType));
   
           if (CONFIG.PERMISSIONS.checklist.includes(userType) && targetPage === 'checklist') {
             nextPage = "checklist.html";
           } else if (CONFIG.PERMISSIONS.archive.includes(userType) && targetPage === 'archive') {
             nextPage = "archive.html";
           }
+
+          document.getElementById("access-info").style.display = 'block';
+          document.getElementById("user-type").innerText = `받아온 userType: ${userType}`;
+          document.getElementById("target-page").innerText = `목표 targetPage: ${targetPage}`;
+          document.getElementById("has-checklist-perm").innerText = `체크리스트 권한 포함 여부: ${CONFIG.PERMISSIONS.checklist.includes(userType)}`;
+          document.getElementById("has-archive-perm").innerText = `"아카이브 권한 포함 여부: ${CONFIG.PERMISSIONS.archive.includes(userType)}`;
+          document.getElementById("next-page").innerText = `넘어갈 페이지: ${nextPage}`;
+
+          debugger;
           
           window.location.replace(`${nextPage}?key=${encodeURIComponent(APP_KEY)}`);
         })
