@@ -628,6 +628,7 @@
       let currentUploadCarId = "";
       let currentUploadCarInfo = "";
       let currentUploadCarSeq = "";
+      let currentUploadCarArr = false;
 
       let includeCarNumber = true;
       let includeCarSeq = true;
@@ -652,6 +653,14 @@
 
       // 페이지 로드 시 1회 데이터 호출
       window.addEventListener('DOMContentLoaded', function() {
+        if (USER_TYPE === 'X-mover') {
+          const searchInput = document.getElementById('searchInput');
+          if (searchInput) searchInput.value = '';
+      
+          const activeBtns = document.querySelectorAll('.quick-filter-container .filter-btn.active');
+          activeBtns.forEach(btn => btn.classList.remove('active'));
+        }
+        
         fetchData();
       });
 
@@ -748,24 +757,26 @@
         event.stopPropagation(); // 부모 list-item의 showDetail 실행 방지
       
         const listItem = element.closest('.list-item');
-        const carId = listItem.dataset.carId;
-        const info = JSON.parse(decodeURIComponent(listItem.dataset.info));
+        const { carId, info } = element.dataset;
+        const { carInfo, carSeq, isArrival } = JSON.parse(decodeURIComponent(info));
       
         currentUploadCarId = carId;
-        currentUploadCarSeq = info.carSeq;
-        currentUploadCarInfo = info.carInfo;
+        currentUploadCarSeq = carSeq;
+        currentUploadCarInfo = carInfo;
+        currentUploadCarArr = isArrival;
       
         openCameraModal();
       }
 
       function showDetail(element) {
         const { carId, info } = element.dataset;
-        const { carInfo, carSeq, carStatus, selectedImageID, reportRaw } = JSON.parse(decodeURIComponent(info));
+        const { carInfo, carSeq, carStatus, selectedImageID, reportRaw, isArrival } = JSON.parse(decodeURIComponent(info));
 
         if (USER_TYPE === "X-mover") {
           currentUploadCarId = carId;
           currentUploadCarSeq = carSeq;
           currentUploadCarInfo = carInfo;
+          currentUploadCarArr = isArrival;
           openCameraModal();
           return;
         }
@@ -1226,6 +1237,7 @@
               key: APP_KEY,
               carId: currentUploadCarId,
               carInfo: currentUploadCarInfo,
+              isArrival: currentUploadCarArr,
               image: base64Data
             })
           });
@@ -1467,6 +1479,7 @@
           const infoObject = {
             carInfo: carInfo,
             carSeq: seq,
+            isArrival: isArrival,
             carStatus: isArrival 
               ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? UTILS.getUnloadingStatus(ptNum, rtNum, 2) : ""}하차 완료` : ""}` 
               : "미도착",
