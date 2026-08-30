@@ -523,6 +523,10 @@
             .filter(function(item) { return item !== listItem; });
 
           var nextItem = notArrivedItems.find(function(item) {
+            var itemWave = item.getAttribute('data-wave');
+            if (wave !== itemWave) {
+              return wave < itemWave; // 1W는 2W 앞에 위치
+            }
             return Number(item.getAttribute('data-row-idx')) > Number(rowIdx);
           });
 
@@ -667,20 +671,37 @@
         var listInner = document.getElementById('list-inner'); 
 
         var getPriority = function(item) {
+          if (!item.arr) return 1;
           if (item.arr && !item.unl) return 2; 
-          if (!item.arr) return 1;                    
           return 3;                                         
         };
 
         var sortedData = (data || []).slice().sort(function(a, b) {
           var priorityA = getPriority(a);
           var priorityB = getPriority(b);
+          
           if (priorityA !== priorityB) return priorityA - priorityB;
-          if (priorityA === 2 && a.aTime && b.aTime) {
-            return a.aTime - b.aTime; 
+          
+          if (priorityA === 1) {
+            var waveA = wave(a.cId);
+            var waveB = wave(b.cId);
+            if (waveA !== waveB) {
+              return waveA.localeCompare(waveB); // "1W"가 "2W"보다 먼저 정렬
+            }
+            return (a.rIdx || 0) - (b.rIdx || 0);
           }
-          return 0;
+          
+          if (priorityA === 2) {
+            if (a.aTime && b.aTime && a.aTime !== b.aTime) {
+              return a.aTime - b.aTime;
+            }
+            return (a.rIdx || 0) - (b.rIdx || 0);
+          }
+
+          return (a.rIdx || 0) - (b.rIdx || 0);
         });
+
+        const listItemsHTML = [];
 
         sortedData.forEach(function(item) {
           var cId = item.cId, rIdx = item.rIdx, hub = item.hub, carN = item.carN, arr = item.arr, unl = item.unl;
@@ -704,17 +725,16 @@
           var carInfo = UTILS.escapeHtml(prefix + hubStr + " | " + carN);
           var isBucheon = String(hub).includes("부천3");
 
-          var listItemHTML = 
+          listItemsHTML.push( 
             '<div class="list-item ' + badgeClass + '" data-row-idx="' + rIdx + '" data-wave="' + itemWave + '" data-bucheon="' + isBucheon + '">' +
               '<button onclick="markAsArrived(' + rIdx + ', this)" class="checkBox" ' + (unl ? 'disabled' : '') + '>' +
                 checkIcon +
               '</button>' +
               '<span class="car-info ' + (unl ? "text-unloaded" : "") + '">' + carInfo + '</span>' +
-            '</div>';
-          
-          listInner.insertAdjacentHTML('beforeend', listItemHTML);
+            '</div>');
         });
-
+        
+        listInner.innerHTML = listItemsHTML.join('');
         filterList();
       }
 
