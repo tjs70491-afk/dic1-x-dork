@@ -753,10 +753,12 @@
       }
 
       function openCameraForCar(event, element) {
-        event.stopPropagation(); // 부모 list-item의 showDetail 실행 방지
+        event.stopPropagation();
       
         const listItem = element.closest('.list-item');
-        const { carId, info } = element.dataset;
+        if (!listItem) return;
+      
+        const { carId, info } = listItem.dataset; 
         const { carInfo, carSeq, isArrival } = JSON.parse(decodeURIComponent(info));
       
         currentUploadCarId = carId;
