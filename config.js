@@ -1,6 +1,6 @@
 const CONFIG = {
   // 1. 구글 앱스 스크립트 배포 URL
-  GAS_URL: "https://script.google.com/macros/s/AKfycbxZ4YuxoxH1Sg2o2foWhbxGuLmffEnVIheORy1tgRQNgl4v3bhuFCycWkSL6z7yngwjTQ/exec",
+  GAS_URL: "https://script.google.com/macros/s/AKfycbyD8JxVnHizdlprhm9pQvj1Fyrp8FvgJXR-ugnhFG3CvDE3WkKAgzcP2Dn-EyBjTC2_gw/exec",
 
   // 2. 허브 이름 치환 규칙
   HUB_MAP: {
