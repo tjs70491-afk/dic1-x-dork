@@ -1464,7 +1464,12 @@
           const ptNum = Number(pt) || 0;
           const rtNum = Number(rt) || 0;
 
-          const carInfo = `${prefix}${hubStr} | ${carNumber}${(ptNum + rtNum > 0) ? ` | ${UTILS.getUnloadingStatus(ptNum, rtNum, 1)}` : ""}`;
+          let carInfo = "";
+          if (ptNum + rtNum > 0) {
+            carInfo = `${prefix}${hubStr} | ${carNumber} | ${UTILS.getUnloadingStatus(ptNum, rtNum, 1)}`;
+          } else {
+            carInfo = `${prefix}${hubStr} | ${carNumber} | ${seq}호차`;
+          }
           
           let statusText = "미도착";
           let badgeClass = "not-arrived";
