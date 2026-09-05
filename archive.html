@@ -1487,7 +1487,7 @@
             carSeq: seq,
             isArrival: isArrival,
             carStatus: isArrival 
-              ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? UTILS.getUnloadingStatus(ptNum, rtNum, 2) : ""}하차 완료` : ""}` 
+              ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? UTILS.getUnloadingStatus(ptNum, rtNum, 2) : ""} 하차 완료` : ""}` 
               : "미도착",
             selectedImageID: selectedImageID || "",
             reportRaw: reportRaw || "-"
