@@ -670,13 +670,42 @@
         listContainer.innerHTML = '<div class="list-inner" id="list-inner"></div>'; 
         var listInner = document.getElementById('list-inner'); 
 
+        var activeCarMap = new Map();
+        var filteredData = [];
+  
+        (data || []).forEach(function(item) {
+          if (item.unl) {
+            // 하차 완료된 차량은 중복 여부 상관없이 모두 추가
+            filteredData.push(item);
+          } else {
+            // 대기중 / 미도착 차량 중복 제거
+            var safeCarNum = String(item.carN).replace(/\s+/g, '');
+            var uniqueKey = item.hub + "_" + safeCarNum;
+  
+            if (!activeCarMap.has(uniqueKey)) {
+              activeCarMap.set(uniqueKey, item); // 처음 본 차량이면 저장
+            } else {
+              var existing = activeCarMap.get(uniqueKey);
+              // 기존 저장된 차가 '미도착'인데, 지금 검사하는 차가 '대기중'이면 덮어씌움 (대기중 우선)
+              if (!existing.arr && item.arr) {
+                activeCarMap.set(uniqueKey, item);
+              }
+            }
+          }
+        });
+  
+        // Map에 걸러진 1개의 고유 대기/미도착 차량들을 배열에 합침
+        activeCarMap.forEach(function(value) {
+          filteredData.push(value);
+        });
+
         var getPriority = function(item) {
           if (!item.arr) return 1;
           if (item.arr && !item.unl) return 2; 
           return 3;                                         
         };
 
-        var sortedData = (data || []).slice().sort(function(a, b) {
+        var sortedData = filteredData.sort(function(a, b) {
           var priorityA = getPriority(a);
           var priorityB = getPriority(b);
           
@@ -706,7 +735,7 @@
         sortedData.forEach(function(item) {
           var cId = item.cId, rIdx = item.rIdx, hub = item.hub, carN = item.carN, arr = item.arr, unl = item.unl;
 
-          if (String(hub).includes("부천3") && !arr) return;
+          // if (String(hub).includes("부천3") && !arr) return;
 
           var badgeClass = "not-arrived";
           var checkIcon = CONFIG.ICONS.empty;
