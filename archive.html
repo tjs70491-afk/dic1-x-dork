@@ -1368,25 +1368,6 @@
         ].join(':');
         document.getElementById('status-msg').innerText = `✅ 조회 시간: ${timeStr}`;
 
-        const seenActiveCars = new Set();
-        const filteredData = [];
-      
-        sheetData.forEach(item => {
-          if (item.isUnloaded) {
-            filteredData.push(item);
-          } else {
-            const safeCarNum = String(item.carNumber).replace(/\s+/g, '');
-            const uniqueKey = `${item.hub}_${safeCarNum}`;
-      
-            if (!seenActiveCars.has(uniqueKey)) {
-              seenActiveCars.add(uniqueKey);
-              filteredData.push(item);
-            }
-          }
-        });
-        
-        sheetData = filteredData; 
-
         const isNotBucheon = (hub) => !String(hub).includes("부천3");
 
         const dataSummary = sheetData.reduce((acc, item) => {
@@ -1469,9 +1450,26 @@
           return;
         }
 
+        const seenActiveCars = new Set();
+        const filteredData = [];
+      
+        sheetData.forEach(item => {
+          if (item.isUnloaded) {
+            filteredData.push(item);
+          } else {
+            const safeCarNum = String(item.carNumber).replace(/\s+/g, '');
+            const uniqueKey = `${item.hub}_${safeCarNum}`;
+      
+            if (!seenActiveCars.has(uniqueKey)) {
+              seenActiveCars.add(uniqueKey);
+              filteredData.push(item);
+            }
+          }
+        });
+
         const listItemsHTML = [];
 
-        sheetData.forEach((item) => {
+        filteredData.forEach((item) => {
           const { carId, hub, type, isArrival, wave, selectedImageID, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, reportRaw, seq } = item;
 
           const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
