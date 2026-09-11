@@ -607,6 +607,13 @@
 
       function fetchData() {
         document.getElementById('status-msg').innerText = "데이터 동기화 중...";
+
+        const cachedData = localStorage.getItem("CACHED_DATA");
+        if (cachedData) {
+          try {
+            updateUI(JSON.parse(cachedData));
+          } catch(e) {}
+        }
       
         fetch(`${CONFIG.GAS_URL}?action=getChecklistData&key=${APP_KEY}`, { redirect: "follow" })
           .then(response => response.json())
@@ -615,6 +622,7 @@
               document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
               return;
             }
+            localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
             updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
           })
           .catch(error => {
