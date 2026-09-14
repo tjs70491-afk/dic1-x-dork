@@ -946,10 +946,10 @@
               mainImg.src = blobUrl;
               mainImg.onclick = function() { downloadImage(item.fileId, item.fileName); };
             };
-          } catch(e) {}
-      
-          thumbContainer.appendChild(wrapper);
-        });
+          }).catch(e => {
+            img.alt = "로딩 실패";
+          });
+        }
       }
 
       function closeModal() {
