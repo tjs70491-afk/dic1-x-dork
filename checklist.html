@@ -491,7 +491,7 @@
         }
       }
 
-      function markAsArrived(rowIdx, btnElement) {
+      function markAsArrived(cId, btnElement) {
         btnElement.disabled = true;
 
         var listInner = document.getElementById('list-inner');
@@ -547,7 +547,7 @@
         stopSyncInterval();
         pendingRequests++;
 
-        fetch(`${CONFIG.GAS_URL}?action=toggleCheck&key=${APP_KEY}&rowIdx=${rowIdx}`, { redirect: "follow" })
+        fetch(`${CONFIG.GAS_URL}?action=toggleCheck&key=${APP_KEY}&cId=${cId}`, { redirect: "follow" })
           .then(res => res.json())
           .then(result => {
             btnElement.disabled = false;
@@ -764,7 +764,7 @@
 
           listItemsHTML.push( 
             '<div class="list-item ' + badgeClass + '" data-row-idx="' + rIdx + '" data-wave="' + itemWave + '" data-bucheon="' + isBucheon + '">' +
-              '<button onclick="markAsArrived(' + rIdx + ', this)" class="checkBox" ' + (unl ? 'disabled' : '') + '>' +
+              '<button onclick="markAsArrived(' + cId + ', this)" class="checkBox" ' + (unl ? 'disabled' : '') + '>' +
                 checkIcon +
               '</button>' +
               '<span class="car-info ' + (unl ? "text-unloaded" : "") + '">' + carInfo + '</span>' +
