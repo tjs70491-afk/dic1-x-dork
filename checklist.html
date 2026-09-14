@@ -573,8 +573,8 @@
             .then(result => {
               btnElement.disabled = false;
               pendingRequests--;
-              if (result.status === "error" || !result.result.success) {
-                alert(result.message || result.result.message);
+              if (result.status === "error") {
+                alert(result.message);
                 fetchData();
               }
               if (pendingRequests === 0) checkWorkTimeAndSync();
