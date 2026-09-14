@@ -375,19 +375,34 @@
 
       function fetchData() {
         document.getElementById('status-msg').innerText = "데이터 동기화 중...";
-      
-        fetch(`${CONFIG.GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
-          .then(response => response.json())
-          .then(result => {
-            if (result.status === "error") {
-              document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
-              return;
-            }
-            updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
-          })
-          .catch(error => {
-            document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
-          });
+
+        if (CONFIG.BACKEND === "WORKER") {
+          fetch(`${CONFIG.WORKER_URL}?action=getDashboard&key=${APP_KEY}`)
+            .then(response => response.json())
+            .then(result => {
+              if (result.status === "error") {
+                document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
+                return;
+              }
+              updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
+            })
+            .catch(error => {
+              document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
+            });
+        } else {
+          fetch(`${CONFIG.GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
+            .then(response => response.json())
+            .then(result => {
+              if (result.status === "error") {
+                document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
+                return;
+              }
+              updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
+            })
+            .catch(error => {
+              document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
+            });
+        }
       }
 
       function updateUI(sheetData) {
