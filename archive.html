@@ -1308,96 +1308,50 @@
           <div style="margin-bottom: 10px; font-size: 18px;">사진 저장 중 📡</div>
           <div style="font-size: 14px; color: #aaa;">잠시만 기다려주세요...</div>
         `;
-        if (CONFIG.BACKEND === "WORKER") {
-          try {
-            const res1 = await fetch(CONFIG.WORKER_URL, {
-              method: "POST",
-              body: JSON.stringify({
-                action: "uploadWatermarkImage",
-                key: APP_KEY,
-                carId: currentUploadCarId,
-                carInfo: currentUploadCarInfo,
-                isArrival: currentUploadCarArr,
-                image: base64Data
-              })
-            });
-        
-            const result1 = await res1.json();
-            if (result1.status !== "success") {
-              throw new Error(result1.message || "사진 저장 실패");
-            }
-        
-            fetch(CONFIG.WORKER_URL, {
-              method: "POST",
-              keepalive: true,
-              body: JSON.stringify({
-                action: "imageInputAppSheet",
-                key: APP_KEY,
-                ...result1.data
-              })
+        try {
+          const res1 = await fetch(CONFIG.GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+              action: "uploadWatermarkImage",
+              key: APP_KEY,
+              carId: currentUploadCarId,
+              carInfo: currentUploadCarInfo,
+              isArrival: currentUploadCarArr,
+              image: base64Data
             })
-            .then(res => res.json())
-            .then(result2 => {
-              console.log("✅ 백그라운드 앱시트 연동 완료:", result2);
-              fetchData();
-            })
-            .catch(err => console.error("앱시트 연동 에러:", err));
-            
-            if (navigator.vibrate) navigator.vibrate(100);
-            isCapturing = false;
-            overlay.style.display = 'none';
-            showToast("✅ 사진 저장 완료!");
-            
-          } catch (err) {
-            isCapturing = false;
-            overlay.style.display = 'none';
-            alert("❌ 전송 실패: " + err.message);
+          });
+      
+          const result1 = await res1.json();
+          if (result1.status !== "success") {
+            throw new Error(result1.message || "사진 저장 실패");
           }
-        } else {
-          try {
-            const res1 = await fetch(CONFIG.GAS_URL, {
-              method: "POST",
-              body: JSON.stringify({
-                action: "uploadWatermarkImage",
-                key: APP_KEY,
-                carId: currentUploadCarId,
-                carInfo: currentUploadCarInfo,
-                isArrival: currentUploadCarArr,
-                image: base64Data
-              })
-            });
-        
-            const result1 = await res1.json();
-            if (result1.status !== "success") {
-              throw new Error(result1.message || "사진 저장 실패");
-            }
-        
-            fetch(CONFIG.GAS_URL, {
-              method: "POST",
-              keepalive: true,
-              body: JSON.stringify({
-                action: "syncAppSheet",
-                key: APP_KEY,
-                ...result1.data
-              })
+      
+          // 앱시트 동기화 비동기 백그라운드 호출
+          fetch(CONFIG.GAS_URL, {
+            method: "POST",
+            keepalive: true,
+            body: JSON.stringify({
+              action: "syncAppSheet",
+              key: APP_KEY,
+              ...result1.data
             })
-            .then(res => res.json())
-            .then(result2 => {
-              console.log("✅ 백그라운드 앱시트 연동 완료:", result2);
-              fetchData();
-            })
-            .catch(err => console.error("앱시트 연동 에러:", err));
-            
-            if (navigator.vibrate) navigator.vibrate(100);
-            isCapturing = false;
-            overlay.style.display = 'none';
-            showToast("✅ 사진 저장 완료!");
-            
-          } catch (err) {
-            isCapturing = false;
-            overlay.style.display = 'none';
-            alert("❌ 전송 실패: " + err.message);
-          }
+          })
+          .then(res => res.json())
+          .then(result2 => {
+            console.log("✅ 백그라운드 앱시트 연동 완료:", result2);
+            fetchData(); // 업로드 후 새 사진 목록 갱신
+          })
+          .catch(err => console.error("앱시트 연동 에러:", err));
+          
+          if (navigator.vibrate) navigator.vibrate(100);
+          isCapturing = false;
+          overlay.style.display = 'none';
+          showToast("✅ 사진 저장 완료!");
+          
+        } catch (err) {
+          isCapturing = false;
+          overlay.style.display = 'none';
+          alert("❌ 전송 실패: " + err.message);
         }
       }
       
