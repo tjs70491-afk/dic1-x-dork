@@ -797,9 +797,9 @@
             .then(res => res.json())
             .then(result => {
               if (result.status === "error") {
-                throw new Error(result.message); // 서버 에러 메시지를 catch로 넘김
+                throw new Error(result.message);
               }
-              fillModalDataWorker(result.data);
+              fillModalDataWorker(result.data); // 비동기 함수 호출
             })
             .catch(err => {
               fillModalError(err.message);
@@ -891,7 +891,7 @@
         });
       }
 
-      function fillModalDataWorker(imagesData) {
+      async function fillModalDataWorker(imagesData) {
         const mainImg = document.getElementById('mainImage');
         const noPreviewText = document.getElementById('noPreviewText');
         const thumbContainer = document.getElementById('thumbnailContainer');
@@ -909,39 +909,42 @@
           return;
         }
         thumbContainer.style.display = 'flex';
-
+        noPreviewText.innerText = "사진을 다운로드/표시하는 중...";
+      
+        const imageList = imagesData.imageInfo;
+        const firstImg = imageList[0];
+      
+        // 1. 메인 첫 번째 이미지 비동기 로드
         try {
-          const firstImg = imagesData.imageInfo[0];
-          const mainBlobUrl = await fetchSecureImageBlob(firstImg.fileId);
+          const mainBlobUrl = await fetchImageBlob(firstImg.fileId);
           mainImg.src = mainBlobUrl;
           mainImg.style.display = 'block';
           noPreviewText.style.display = 'none';
-          mainImg.onclick = () => downloadImage(firstImg.fileId, firstImg.fileName);
+          mainImg.onclick = function() { downloadImage(firstImg.fileId, firstImg.fileName); };
         } catch (err) {
-          noPreviewText.innerText = "이미지를 불러오지 못했습니다.";
+          noPreviewText.innerText = "메인 이미지를 불러오지 못했습니다.";
         }
       
-        // 썸네일들 로드
-        imagesData.imageInfo.forEach(async (item, index) => {
-          const { fileId, fileName } = item;
+        // 2. 썸네일 리스트 생성 (순차 비동기 로드)
+        for (let i = 0; i < imageList.length; i++) {
+          const item = imageList[i];
           const wrapper = document.createElement('div');
           wrapper.className = 'thumb-wrapper';
-          if (index === 0) wrapper.classList.add('active');
+          if (i === 0) wrapper.classList.add('active');
       
           const img = document.createElement('img');
           img.className = 'thumb-img';
           wrapper.appendChild(img);
+          thumbContainer.appendChild(wrapper);
       
-          // 각 썸네일도 안전하게 Blob으로 로드
-          try {
-            const blobUrl = await fetchSecureImageBlob(fileId);
+          // 각 썸네일 비동기 할당
+          fetchImageBlob(item.fileId).then(blobUrl => {
             img.src = blobUrl;
-      
             wrapper.onclick = function() {
               document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
               wrapper.classList.add('active');
               mainImg.src = blobUrl;
-              mainImg.onclick = () => downloadImage(fileId, fileName);
+              mainImg.onclick = function() { downloadImage(item.fileId, item.fileName); };
             };
           } catch(e) {}
       
@@ -1421,7 +1424,7 @@
         }, 2500);
       }
       
-      async function fetchSecureImageBlob(fileId) {
+      async function fetchImageBlob(fileId) {
         const response = await fetch(CONFIG.WORKER_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1438,7 +1441,7 @@
 
       async function downloadImage(fileId, fileName) {
         try {
-          const blobUrl = await fetchSecureImageBlob(fileId);
+          const blobUrl = await fetchImageBlob(fileId);
           const a = document.createElement('a');
           a.href = blobUrl;
           a.download = fileName || "download_image.jpg";
