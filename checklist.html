@@ -412,24 +412,43 @@
 
         qrImage.style.display = 'none';
         qrErrDetail.style.display = 'none';
-
-        fetch(`${CONFIG.GAS_URL}?action=generateGuestLink&key=${APP_KEY}`, { redirect: "follow" })
-          .then(response => response.json())
-          .then(result => {
-            if (result.status === "error") {
-              qrInfo.innerText = "❌ 인증 오류"
-              qrErrDetail.innerText = result.message;
+        if (CONFIG.BACKEND === "WORKER") {
+          fetch(`${CONFIG.WORKER_URL}?action=generateGuestLink&key=${APP_KEY}`)
+            .then(response => response.json())
+            .then(result => {
+              if (result.status === "error") {
+                qrInfo.innerText = "❌ 인증 오류"
+                qrErrDetail.innerText = result.message;
+                qrErrDetail.style.display = 'block';
+                return;
+              }
+              qrImage.style.display = 'block';
+              qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(result.data);
+            })
+            .catch(error => {
+              qrInfo.innerText = "❌ 서버 에러"
+              qrErrDetail.innerText = error.message;
               qrErrDetail.style.display = 'block';
-              return;
-            }
-            qrImage.style.display = 'block';
-            qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(result.data);
-          })
-          .catch(error => {
-            qrInfo.innerText = "❌ 서버 에러"
-            qrErrDetail.innerText = error.message;
-            qrErrDetail.style.display = 'block';
-          });
+            });
+        } else {
+          fetch(`${CONFIG.GAS_URL}?action=generateGuestLink&key=${APP_KEY}`, { redirect: "follow" })
+            .then(response => response.json())
+            .then(result => {
+              if (result.status === "error") {
+                qrInfo.innerText = "❌ 인증 오류"
+                qrErrDetail.innerText = result.message;
+                qrErrDetail.style.display = 'block';
+                return;
+              }
+              qrImage.style.display = 'block';
+              qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(result.data);
+            })
+            .catch(error => {
+              qrInfo.innerText = "❌ 서버 에러"
+              qrErrDetail.innerText = error.message;
+              qrErrDetail.style.display = 'block';
+            });
+        }
 
         modal.classList.add('active');
       }
@@ -547,25 +566,46 @@
         filterList();
         stopSyncInterval();
         pendingRequests++;
-
-        fetch(`${CONFIG.GAS_URL}?action=toggleCheck&key=${APP_KEY}&cId=${cId}`, { redirect: "follow" })
-          .then(res => res.json())
-          .then(result => {
-            btnElement.disabled = false;
-            pendingRequests--;
-            if (result.status === "error" || !result.result.success) {
-              alert(result.message || result.result.message);
+        
+        if (CONFIG.BACKEND === "WORKER") {
+          fetch(`${CONFIG.WORKER_URL}?action=toggleCheck&key=${APP_KEY}&cId=${cId}`)
+            .then(res => res.json())
+            .then(result => {
+              btnElement.disabled = false;
+              pendingRequests--;
+              if (result.status === "error" || !result.result.success) {
+                alert(result.message || result.result.message);
+                fetchData();
+              }
+              if (pendingRequests === 0) checkWorkTimeAndSync();
+            })
+            .catch(err => {
+              btnElement.disabled = false;
+              pendingRequests--;
+              alert("네트워크 연결 오류. 원래 상태로 복구합니다.");
               fetchData();
-            }
-            if (pendingRequests === 0) checkWorkTimeAndSync();
-          })
-          .catch(err => {
-            btnElement.disabled = false;
-            pendingRequests--;
-            alert("네트워크 연결 오류. 원래 상태로 복구합니다.");
-            fetchData();
-            if (pendingRequests === 0) checkWorkTimeAndSync();
-          });
+              if (pendingRequests === 0) checkWorkTimeAndSync();
+            });
+        } else {
+          fetch(`${CONFIG.GAS_URL}?action=toggleCheck&key=${APP_KEY}&cId=${cId}`, { redirect: "follow" })
+            .then(res => res.json())
+            .then(result => {
+              btnElement.disabled = false;
+              pendingRequests--;
+              if (result.status === "error" || !result.result.success) {
+                alert(result.message || result.result.message);
+                fetchData();
+              }
+              if (pendingRequests === 0) checkWorkTimeAndSync();
+            })
+            .catch(err => {
+              btnElement.disabled = false;
+              pendingRequests--;
+              alert("네트워크 연결 오류. 원래 상태로 복구합니다.");
+              fetchData();
+              if (pendingRequests === 0) checkWorkTimeAndSync();
+            });
+        }
       }
 
       function updateRemainCount(wave, delta) {
@@ -617,20 +657,36 @@
             } catch(e) {}
           }
         }
-      
-        fetch(`${CONFIG.GAS_URL}?action=getChecklistData&key=${APP_KEY}`, { redirect: "follow" })
-          .then(response => response.json())
-          .then(result => {
-            if (result.status === "error") {
-              document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
-              return;
-            }
-            localStorage.setItem("CACHED_DATA", JSON.stringify(result.data));
-            updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
-          })
-          .catch(error => {
-            document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
-          });
+
+        if (CONFIG.BACKEND === "WORKER") {
+          fetch(`${CONFIG.WORKER_URL}?action=getChecklistData&key=${APP_KEY}`)
+            .then(response => response.json())
+            .then(result => {
+              if (result.status === "error") {
+                document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
+                return;
+              }
+              localStorage.setItem("CACHED_DATA", JSON.stringify(result.data));
+              updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
+            })
+            .catch(error => {
+              document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
+            });
+        } else {
+          fetch(`${CONFIG.GAS_URL}?action=getChecklistData&key=${APP_KEY}`, { redirect: "follow" })
+            .then(response => response.json())
+            .then(result => {
+              if (result.status === "error") {
+                document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
+                return;
+              }
+              localStorage.setItem("CACHED_DATA", JSON.stringify(result.data));
+              updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
+            })
+            .catch(error => {
+              document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
+            });
+        }
       }
 
       function updateUI(data) {
