@@ -578,7 +578,7 @@
       }
 
       function checkWorkTimeAndSync() {
-        fetchData();
+        fetchData(useCache);
         stopSyncInterval();
 
         if (document.hidden) return;
@@ -606,14 +606,16 @@
         }
       }
 
-      function fetchData() {
+      function fetchData(useCache = true) {
         document.getElementById('status-msg').innerText = "데이터 동기화 중...";
 
-        const cachedData = localStorage.getItem("CACHED_DATA");
-        if (cachedData) {
-          try {
-            updateUI(JSON.parse(cachedData));
-          } catch(e) {}
+        if (useCache) {
+          const cachedData = localStorage.getItem("CACHED_DATA");
+          if (cachedData) {
+            try {
+              updateUI(JSON.parse(cachedData));
+            } catch(e) {}
+          }
         }
       
         fetch(`${CONFIG.GAS_URL}?action=getChecklistData&key=${APP_KEY}`, { redirect: "follow" })
@@ -632,6 +634,9 @@
       }
 
       function updateUI(data) {
+
+        if (pendingRequests > 0) return; 
+        
         var now = new Date();
         var timeStr = [
           String(now.getHours()).padStart(2, '0'),
