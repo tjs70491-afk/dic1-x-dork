@@ -620,6 +620,7 @@
     <script>
       const APP_KEY = UTILS.getAuthKey();
       const USER_TYPE = UTILS.getUserType();
+      const backEndUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
       if (!APP_KEY) {
         alert("인증 정보가 없습니다. 다시 로그인해주세요.");
         window.location.replace("index.html");
@@ -790,18 +791,32 @@
         document.getElementById('noPreviewText').innerText = "데이터를 불러오는 중입니다...";
         document.getElementById('thumbnailContainer').innerHTML = "<p class='loading'>이미지 불러오는 중...</p>";
         document.getElementById('detailModal').style.display = 'flex';
-
-        fetch(`${CONFIG.GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}`, { redirect: "follow" })
-          .then(res => res.json())
-          .then(result => {
-            if (result.status === "error") {
-              throw new Error(result.message); // 서버 에러 메시지를 catch로 넘김
-            }
-            fillModalData(result.data);
-          })
-          .catch(err => {
-            fillModalError(err.message);
-          });
+        
+        if (CONFIG.BACKEND === "WORKER") {
+          fetch(`${CONFIG.WORKER_URL}?action=getImages&key=${APP_KEY}&carId=${carId}`)
+            .then(res => res.json())
+            .then(result => {
+              if (result.status === "error") {
+                throw new Error(result.message); // 서버 에러 메시지를 catch로 넘김
+              }
+              fillModalDataWorker(result.data);
+            })
+            .catch(err => {
+              fillModalError(err.message);
+            });
+        } else {
+          fetch(`${CONFIG.GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}`, { redirect: "follow" })
+            .then(res => res.json())
+            .then(result => {
+              if (result.status === "error") {
+                throw new Error(result.message); // 서버 에러 메시지를 catch로 넘김
+              }
+              fillModalData(result.data);
+            })
+            .catch(err => {
+              fillModalError(err.message);
+            });
+        }
       }
 
       function fillModalError(message) {
@@ -870,6 +885,56 @@
             wrapper.classList.add('active');
             mainImg.src = "data:image/jpeg;base64," + base64; 
             mainImg.onclick = function () { downloadFile(fileId) };
+          };
+
+          thumbContainer.appendChild(wrapper);
+        });
+      }
+
+      function fillModalDataWorker(imagesData) {
+        const mainImg = document.getElementById('mainImage');
+        const noPreviewText = document.getElementById('noPreviewText');
+        const thumbContainer = document.getElementById('thumbnailContainer');
+
+        thumbContainer.innerHTML = '';
+
+        if (!imagesData || !imagesData.imageInfo || imagesData.imageInfo.length === 0) {
+          mainImg.style.display = 'none';
+          mainImg.src = '';
+          
+          noPreviewText.innerText = "해당 차량을 촬영한 사진이 없습니다.";
+          noPreviewText.style.display = 'block';
+
+          thumbContainer.style.display = 'none';
+          return;
+        }
+        thumbContainer.style.display = 'flex';
+
+        const mainImage = imagesData.imageInfo[0];
+
+        mainImg.src = mainImage.imageUrl;
+        mainImg.style.display = 'block';
+        noPreviewText.style.display = 'none';
+        mainImg.onclick = function () { downloadImage(mainImage.fileId, mainImage.fileName) };
+
+
+        imagesData.imageInfo.forEach(item, index => {
+          const { imageId, fileId, fileName, imageUrl } = item;
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'thumb-wrapper';
+          if (index === 0) wrapper.classList.add('active');
+
+          const img = document.createElement('img');
+          img.src = imageUrl;
+          img.className = 'thumb-img';
+          wrapper.appendChild(img);
+
+          wrapper.onclick = function() {
+            document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
+            wrapper.classList.add('active');
+            mainImg.src = imageUrl; 
+            mainImg.onclick = function () { downloadImage(mainImage.fileId, mainImage.fileName) };
           };
 
           thumbContainer.appendChild(wrapper);
@@ -1232,50 +1297,96 @@
           <div style="margin-bottom: 10px; font-size: 18px;">사진 저장 중 📡</div>
           <div style="font-size: 14px; color: #aaa;">잠시만 기다려주세요...</div>
         `;
-      
-        try {
-          const res1 = await fetch(CONFIG.GAS_URL, {
-            method: "POST",
-            body: JSON.stringify({
-              action: "uploadWatermarkImage",
-              key: APP_KEY,
-              carId: currentUploadCarId,
-              carInfo: currentUploadCarInfo,
-              isArrival: currentUploadCarArr,
-              image: base64Data
+        if (CONFIG.BACKEND === "WORKER") {
+          try {
+            const res1 = await fetch(CONFIG.WORKER_URL, {
+              method: "POST",
+              body: JSON.stringify({
+                action: "uploadWatermarkImage",
+                key: APP_KEY,
+                carId: currentUploadCarId,
+                carInfo: currentUploadCarInfo,
+                isArrival: currentUploadCarArr,
+                image: base64Data
+              })
+            });
+        
+            const result1 = await res1.json();
+            if (result1.status !== "success") {
+              throw new Error(result1.message || "사진 저장 실패");
+            }
+        
+            fetch(CONFIG.WORKER_URL, {
+              method: "POST",
+              keepalive: true,
+              body: JSON.stringify({
+                action: "imageInputAppSheet",
+                key: APP_KEY,
+                ...result1.data
+              })
             })
-          });
-      
-          const result1 = await res1.json();
-          if (result1.status !== "success") {
-            throw new Error(result1.message || "사진 저장 실패");
+            .then(res => res.json())
+            .then(result2 => {
+              console.log("✅ 백그라운드 앱시트 연동 완료:", result2);
+              fetchData();
+            })
+            .catch(err => console.error("앱시트 연동 에러:", err));
+            
+            if (navigator.vibrate) navigator.vibrate(100);
+            isCapturing = false;
+            overlay.style.display = 'none';
+            showToast("✅ 사진 저장 완료!");
+            
+          } catch (err) {
+            isCapturing = false;
+            overlay.style.display = 'none';
+            alert("❌ 전송 실패: " + err.message);
           }
-      
-          fetch(CONFIG.GAS_URL, {
-            method: "POST",
-            keepalive: true,
-            body: JSON.stringify({
-              action: "syncAppSheet",
-              key: APP_KEY,
-              ...result1.data
+        } else {
+          try {
+            const res1 = await fetch(CONFIG.GAS_URL, {
+              method: "POST",
+              body: JSON.stringify({
+                action: "uploadWatermarkImage",
+                key: APP_KEY,
+                carId: currentUploadCarId,
+                carInfo: currentUploadCarInfo,
+                isArrival: currentUploadCarArr,
+                image: base64Data
+              })
+            });
+        
+            const result1 = await res1.json();
+            if (result1.status !== "success") {
+              throw new Error(result1.message || "사진 저장 실패");
+            }
+        
+            fetch(CONFIG.GAS_URL, {
+              method: "POST",
+              keepalive: true,
+              body: JSON.stringify({
+                action: "syncAppSheet",
+                key: APP_KEY,
+                ...result1.data
+              })
             })
-          })
-          .then(res => res.json())
-          .then(result2 => {
-            console.log("✅ 백그라운드 앱시트 연동 완료:", result2);
-            fetchData();
-          })
-          .catch(err => console.error("앱시트 연동 에러:", err));
-          
-          if (navigator.vibrate) navigator.vibrate(100);
-          isCapturing = false;
-          overlay.style.display = 'none';
-          showToast("✅ 사진 저장 완료!");
-          
-        } catch (err) {
-          isCapturing = false;
-          overlay.style.display = 'none';
-          alert("❌ 전송 실패: " + err.message);
+            .then(res => res.json())
+            .then(result2 => {
+              console.log("✅ 백그라운드 앱시트 연동 완료:", result2);
+              fetchData();
+            })
+            .catch(err => console.error("앱시트 연동 에러:", err));
+            
+            if (navigator.vibrate) navigator.vibrate(100);
+            isCapturing = false;
+            overlay.style.display = 'none';
+            showToast("✅ 사진 저장 완료!");
+            
+          } catch (err) {
+            isCapturing = false;
+            overlay.style.display = 'none';
+            alert("❌ 전송 실패: " + err.message);
+          }
         }
       }
       
@@ -1300,6 +1411,31 @@
           toast.style.opacity = '0';
           setTimeout(() => { toast.style.display = 'none'; }, 500);
         }, 2500);
+      }
+
+      function downloadImage(fileId, fileName) {
+        fetch(`${CONFIG.WORKER_URL}?fileId=${fileId}`, {
+              method: "POST",
+              body: JSON.stringify({
+                action: "viewImage",
+                key: APP_KEY
+              })
+            })
+          .then(response => response.blob())
+          .then(blob => {
+              // 브라우저 메모리에 가상 다운로드 링크 생성
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = fileName || "download_image.jpg"; // 저장될 파일 이름 설정
+              document.body.appendChild(a);
+              a.click(); // 강제 클릭으로 다운로드 시작
+              
+              // 메모리 정리
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+            })
+          .catch(error => console.error("다운로드 중 오류 발생:", error));
       }
 
       function downloadFile(fileId) {
@@ -1342,23 +1478,42 @@
             updateUI(JSON.parse(cachedData));
           } catch(e) {}
         }
-      
-        fetch(`${CONFIG.GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
-          .then(response => response.json())
-          .then(result => {
-            if (result.status === "error") {
-              statusMsg.innerText = "❌ 인증 오류: " + result.message;
-              return;
-            }
-            localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
-            updateUI(result.data);
-          })
-          .catch(error => {
-            statusMsg.innerText = "❌ 서버 에러: " + error.message;
-          })
-          .finally(() => {
-            if (refreshBtn) refreshBtn.classList.remove('spinning');
-          });
+
+        if (CONFIG.BACKEND === "WORKER") {
+          fetch(`${CONFIG.WORKER_URL}?action=getDashboard&key=${APP_KEY}`)
+            .then(response => response.json())
+            .then(result => {
+              if (result.status === "error") {
+                statusMsg.innerText = "❌ 인증 오류: " + result.message;
+                return;
+              }
+              localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
+              updateUI(result.data);
+            })
+            .catch(error => {
+              statusMsg.innerText = "❌ 서버 에러: " + error.message;
+            })
+            .finally(() => {
+              if (refreshBtn) refreshBtn.classList.remove('spinning');
+            });
+        } else {
+          fetch(`${CONFIG.GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
+            .then(response => response.json())
+            .then(result => {
+              if (result.status === "error") {
+                statusMsg.innerText = "❌ 인증 오류: " + result.message;
+                return;
+              }
+              localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
+              updateUI(result.data);
+            })
+            .catch(error => {
+              statusMsg.innerText = "❌ 서버 에러: " + error.message;
+            })
+            .finally(() => {
+              if (refreshBtn) refreshBtn.classList.remove('spinning');
+            });
+        }
       }
 
       function updateUI(sheetData) {
