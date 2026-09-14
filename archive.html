@@ -910,33 +910,41 @@
         }
         thumbContainer.style.display = 'flex';
 
-        const mainImage = imagesData.imageInfo[0];
-
-        mainImg.src = mainImage.imageUrl;
-        mainImg.style.display = 'block';
-        noPreviewText.style.display = 'none';
-        mainImg.onclick = function () { downloadImage(mainImage.fileId, mainImage.fileName) };
-
-
-        imagesData.imageInfo.forEach((item, index) => {
-          const { imageId, fileId, fileName, imageUrl } = item;
-
+        try {
+          const firstImg = imagesData.imageInfo[0];
+          const mainBlobUrl = await fetchSecureImageBlob(firstImg.fileId);
+          mainImg.src = mainBlobUrl;
+          mainImg.style.display = 'block';
+          noPreviewText.style.display = 'none';
+          mainImg.onclick = () => downloadImage(firstImg.fileId, firstImg.fileName);
+        } catch (err) {
+          noPreviewText.innerText = "이미지를 불러오지 못했습니다.";
+        }
+      
+        // 썸네일들 로드
+        imagesData.imageInfo.forEach(async (item, index) => {
+          const { fileId, fileName } = item;
           const wrapper = document.createElement('div');
           wrapper.className = 'thumb-wrapper';
           if (index === 0) wrapper.classList.add('active');
-
+      
           const img = document.createElement('img');
-          img.src = imageUrl;
           img.className = 'thumb-img';
           wrapper.appendChild(img);
-
-          wrapper.onclick = function() {
-            document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
-            wrapper.classList.add('active');
-            mainImg.src = imageUrl; 
-            mainImg.onclick = function () { downloadImage(mainImage.fileId, mainImage.fileName) };
-          };
-
+      
+          // 각 썸네일도 안전하게 Blob으로 로드
+          try {
+            const blobUrl = await fetchSecureImageBlob(fileId);
+            img.src = blobUrl;
+      
+            wrapper.onclick = function() {
+              document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
+              wrapper.classList.add('active');
+              mainImg.src = blobUrl;
+              mainImg.onclick = () => downloadImage(fileId, fileName);
+            };
+          } catch(e) {}
+      
           thumbContainer.appendChild(wrapper);
         });
       }
@@ -1412,30 +1420,34 @@
           setTimeout(() => { toast.style.display = 'none'; }, 500);
         }, 2500);
       }
+      
+      async function fetchSecureImageBlob(fileId) {
+        const response = await fetch(CONFIG.WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "viewImage",
+            key: APP_KEY, // POST 바디에 안전하게 담김
+            fileId: fileId
+          })
+        });
+        if (!response.ok) throw new Error("이미지 로드 실패");
+        const blob = await response.blob();
+        return window.URL.createObjectURL(blob);
+      }
 
-      function downloadImage(fileId, fileName) {
-        fetch(`${CONFIG.WORKER_URL}?fileId=${fileId}`, {
-              method: "POST",
-              body: JSON.stringify({
-                action: "viewImage",
-                key: APP_KEY
-              })
-            })
-          .then(response => response.blob())
-          .then(blob => {
-              // 브라우저 메모리에 가상 다운로드 링크 생성
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = fileName || "download_image.jpg"; // 저장될 파일 이름 설정
-              document.body.appendChild(a);
-              a.click(); // 강제 클릭으로 다운로드 시작
-              
-              // 메모리 정리
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-            })
-          .catch(error => console.error("다운로드 중 오류 발생:", error));
+      async function downloadImage(fileId, fileName) {
+        try {
+          const blobUrl = await fetchSecureImageBlob(fileId);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName || "download_image.jpg";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        } catch (error) {
+          alert("다운로드 중 오류가 발생했습니다.");
+        }
       }
 
       function downloadFile(fileId) {
