@@ -1,6 +1,7 @@
 const CONFIG = {
   // 1. 구글 앱스 스크립트 배포 URL
-  GAS_URL: "https://script.google.com/macros/s/AKfycbzNZgujqd3G-GZE4g1bk3rbgHPLPFqgbsJ9LHHeCfRLCVWCCG1X4eDMn9lylPlJO7H3cA/exec",
+  GAS_URL: "https://script.google.com/macros/s/AKfycbzwm7HPCCuLLip_Mxz2M338Ao8wYwQU8-u0ghuwhTYBXJJQEOST7VspZY6VCWq4DSAMRA/exec",
+  WORKER_URL: "https://dic1-x-dock.tjs70491.workers.dev/",
 
   // 2. 허브 이름 치환 규칙
   HUB_MAP: {
