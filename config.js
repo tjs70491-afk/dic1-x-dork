@@ -23,8 +23,8 @@ const CONFIG = {
 
   // 5. 권한별 접근 허용 페이지
   PERMISSIONS: {
-    checklist: ["ADMIN", "helper", "signal", "guest"],
-    archive: ["ADMIN", "helper", "SeniorHelperLeader", "field-admin", "X-mover"]
+    checklist: ["ADMIN", "signal", "guest"],
+    archive: ["ADMIN", "SeniorHelperLeader", "HelperLeader", "field-admin", "X-mover"]
   },
 
   // 6. SVG 아이콘 리소스
