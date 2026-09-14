@@ -853,11 +853,12 @@
           noPreviewText.style.display = 'block';
         }
 
-        imagesData.forEach(item => {
+        imagesData.forEach(item, index => {
           const { imageId, fileId, base64, fileName } = item;
 
           const wrapper = document.createElement('div');
           wrapper.className = 'thumb-wrapper';
+          if (index === 0) wrapper.classList.add('active');
 
           const img = document.createElement('img');
           img.src = "data:image/jpeg;base64," + base64;
