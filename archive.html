@@ -1388,10 +1388,10 @@
             fileId: fileId
           })
         });
-        if (!response.ok) {
-          const errorJson = await response.json().catch(() => ({ message: response.statusText }));
-          console.error(`❌ 이미지 로드 실패 [${fileId}]:`, errorJson);
-          throw new Error(errorJson.message || "이미지 로드 실패");
+        if (!response.ok || (contentType && contentType.includes("application/json"))) {
+          const errData = await response.json().catch(() => ({ message: response.statusText }));
+          console.error(`❌ 이미지 로드 실패 [${fileId}]:`, errData);
+          throw new Error(errData.message || "이미지 로드 실패");
         }
         const blob = await response.blob();
         return window.URL.createObjectURL(blob);
