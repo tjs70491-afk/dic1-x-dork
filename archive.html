@@ -793,7 +793,7 @@
         document.getElementById('detailModal').style.display = 'flex';
         
         if (CONFIG.BACKEND === "WORKER") {
-          fetch(`${CONFIG.WORKER_URL}?action=getImages&key=${APP_KEY}&carId=${carId}`)
+          fetch(`${CONFIG.WORKER_URL}?action=getDetails&key=${APP_KEY}&cId=${carId}`)
             .then(res => res.json())
             .then(result => {
               if (result.status === "error") {
@@ -918,7 +918,7 @@
         mainImg.onclick = function () { downloadImage(mainImage.fileId, mainImage.fileName) };
 
 
-        imagesData.imageInfo.forEach(item, index => {
+        imagesData.imageInfo.forEach((item, index) => {
           const { imageId, fileId, fileName, imageUrl } = item;
 
           const wrapper = document.createElement('div');
