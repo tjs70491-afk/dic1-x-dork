@@ -795,7 +795,7 @@
           .then(res => res.json())
           .then(result => {
             if (result.status === "error") {
-              noPreviewText.innerText = result.message; // 서버 에러 메시지를 catch로 넘김
+              throw new Error(result.message); // 서버 에러 메시지를 catch로 넘김
             }
             fillModalData(result.data);
           })
