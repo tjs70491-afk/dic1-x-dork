@@ -3,6 +3,8 @@ const CONFIG = {
   GAS_URL: "https://script.google.com/macros/s/AKfycbzwm7HPCCuLLip_Mxz2M338Ao8wYwQU8-u0ghuwhTYBXJJQEOST7VspZY6VCWq4DSAMRA/exec",
   WORKER_URL: "https://dic1-x-dock.tjs70491.workers.dev/",
 
+  BACKEND: "WORKER",
+
   // 2. 허브 이름 치환 규칙
   HUB_MAP: {
     "부천3": "클러스터",
