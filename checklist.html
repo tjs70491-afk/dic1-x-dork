@@ -500,6 +500,7 @@
 
         var wave = listItem.getAttribute('data-wave');
         var isBucheon = listItem.getAttribute('data-bucheon') === 'true';
+        var rowIdx = listItem.getAttribute('data-row-idx');
 
         if (!isAlreadyWaiting) { 
           btnElement.innerHTML = CONFIG.ICONS.checked;
@@ -764,7 +765,7 @@
 
           listItemsHTML.push( 
             '<div class="list-item ' + badgeClass + '" data-row-idx="' + rIdx + '" data-wave="' + itemWave + '" data-bucheon="' + isBucheon + '">' +
-              '<button onclick="markAsArrived(' + cId + ', this)" class="checkBox" ' + (unl ? 'disabled' : '') + '>' +
+              '<button onclick="markAsArrived(\'' + cId + '\', this)" class="checkBox" ' + (unl ? 'disabled' : '') + '>' +
                 checkIcon +
               '</button>' +
               '<span class="car-info ' + (unl ? "text-unloaded" : "") + '">' + carInfo + '</span>' +
