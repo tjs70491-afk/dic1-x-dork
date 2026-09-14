@@ -578,7 +578,7 @@
       }
 
       function checkWorkTimeAndSync() {
-        fetchData(useCache);
+        fetchData(true);
         stopSyncInterval();
 
         if (document.hidden) return;
