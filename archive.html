@@ -771,7 +771,7 @@
 
       function showDetail(element) {
         const { carId, info } = element.dataset;
-        const { carInfo, carSeq, carStatus, selectedImageID, reportRaw, isArrival } = JSON.parse(decodeURIComponent(info));
+        const { carInfo, carSeq, carStatus, reportRaw, isArrival } = JSON.parse(decodeURIComponent(info));
 
         if (USER_TYPE === "X-mover") {
           currentUploadCarId = carId;
@@ -791,7 +791,7 @@
         document.getElementById('thumbnailContainer').innerHTML = "<p class='loading'>이미지 불러오는 중...</p>";
         document.getElementById('detailModal').style.display = 'flex';
 
-        fetch(`${CONFIG.GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}&imageId=${selectedImageID}`, { redirect: "follow" })
+        fetch(`${CONFIG.GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}`, { redirect: "follow" })
           .then(res => res.json())
           .then(result => {
             fillModalData(result.data);
@@ -837,7 +837,7 @@
         }
         thumbContainer.style.display = 'flex';
 
-        const mainImage = imagesData.find(item => item.isSelected) || imagesData[0];
+        const mainImage = imagesData[0];
 
         if (mainImage && mainImage.base64) {
           mainImg.src = "data:image/jpeg;base64," + mainImage.base64;
@@ -851,11 +851,10 @@
         }
 
         imagesData.forEach(item => {
-          const { imageId, isSelected, fileId, base64, fileName } = item;
+          const { imageId, fileId, base64, fileName } = item;
 
           const wrapper = document.createElement('div');
           wrapper.className = 'thumb-wrapper';
-          if (isSelected) wrapper.classList.add('active');
 
           const img = document.createElement('img');
           img.src = "data:image/jpeg;base64," + base64;
@@ -1506,7 +1505,6 @@
             carStatus: isArrival 
               ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? UTILS.getUnloadingStatus(ptNum, rtNum, 2) : ""} 하차 완료` : ""}` 
               : "미도착",
-            selectedImageID: selectedImageID || "",
             reportRaw: reportRaw || "-"
           };
 
