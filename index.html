@@ -42,14 +42,11 @@
             nextPage = "archive.html";
           }
           
-          debugger;
-          
           window.location.replace(`${nextPage}?key=${encodeURIComponent(APP_KEY)}`);
         })
         .catch(err => {
           console.error("Fetch 에러 상세:", err);
           document.body.innerHTML = "<h2>서버 통신 오류가 발생했습니다.</h2>";
-          debugger;
         });
     }
   </script>
