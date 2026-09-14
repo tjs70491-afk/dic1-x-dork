@@ -792,31 +792,27 @@
         document.getElementById('thumbnailContainer').innerHTML = "<p class='loading'>이미지 불러오는 중...</p>";
         document.getElementById('detailModal').style.display = 'flex';
         
-        if (CONFIG.BACKEND === "WORKER") {
-          fetch(`${CONFIG.WORKER_URL}?action=getDetails&key=${APP_KEY}&cId=${carId}`)
-            .then(res => res.json())
-            .then(result => {
-              if (result.status === "error") {
-                throw new Error(result.message);
-              }
-              fillModalDataWorker(result.data); // 비동기 함수 호출
-            })
-            .catch(err => {
-              fillModalError(err.message);
-            });
-        } else {
-          fetch(`${CONFIG.GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}`, { redirect: "follow" })
-            .then(res => res.json())
-            .then(result => {
-              if (result.status === "error") {
-                throw new Error(result.message); // 서버 에러 메시지를 catch로 넘김
-              }
-              fillModalData(result.data);
-            })
-            .catch(err => {
-              fillModalError(err.message);
-            });
-        }
+        const targetUrl = (CONFIG.BACKEND === "WORKER")
+          ? `${CONFIG.WORKER_URL}?action=getDetails&key=${APP_KEY}&cId=${carId}`
+          : `${CONFIG.GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}`;
+
+        fetch(targetUrl, { redirect: "follow" })
+          .then(res => res.json())
+          .then(result => {
+            if (result.status === "error") {
+              throw new Error(result.message);
+            }
+            
+            // Worker는 result.data.images, GAS는 result.data (배열) 형태 호환 처리
+            const images = result.data.images || result.data;
+            if (result.data.reports) {
+              document.getElementById('popReportRaw').innerText = result.data.reports;
+            }
+            fillModalData(images);
+          })
+          .catch(err => {
+            fillModalError(err.message);
+          });
       }
 
       function fillModalError(message) {
@@ -870,6 +866,8 @@
 
         imagesData.forEach((item, index) => {
           const { imageId, fileId, base64, fileName } = item;
+
+          if (!base64) return;
 
           const wrapper = document.createElement('div');
           wrapper.className = 'thumb-wrapper';
@@ -949,6 +947,48 @@
           }).catch(e => {
             img.alt = "로딩 실패";
           });
+        }
+      }
+
+      function downloadBase64(base64Data, fileName) {
+        if (!base64Data) return;
+        const name = fileName || "car_image.jpg";
+
+        try {
+          // Base64를 Blob 객체로 변환
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: "image/jpeg" });
+          const blobUrl = window.URL.createObjectURL(blob);
+
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+          if (isMobile) {
+            // [모바일] 새 탭에 띄워 꾹 눌러 저장하도록 유도 (보안 차단 우회)
+            const newTab = window.open();
+            if (newTab) {
+              newTab.document.write(`<img src="${blobUrl}" style="max-width:100%; height:auto;" alt="download" />`);
+              newTab.document.title = name;
+            } else {
+              window.location.href = blobUrl;
+            }
+            showToast("💡 사진을 꾹 누르면 [사진 저장]이 가능합니다.");
+          } else {
+            // [PC] 즉시 자동 다운로드
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+          }
+        } catch (error) {
+          alert("다운로드 중 오류가 발생했습니다: " + error.message);
         }
       }
 
