@@ -794,6 +794,9 @@
         fetch(`${CONFIG.GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}`, { redirect: "follow" })
           .then(res => res.json())
           .then(result => {
+            if (result.status === "error") {
+              noPreviewText.innerText = result.message; // 서버 에러 메시지를 catch로 넘김
+            }
             fillModalData(result.data);
           })
           .catch(err => {
