@@ -785,7 +785,7 @@
 
         document.getElementById('popTitle').innerText = carInfo;
         document.getElementById('popStatus').innerText = carStatus;
-        document.getElementById('popReportRaw').innerText = reportRaw;
+        document.getElementById('popReportRaw').innerText = "-";
         document.getElementById('mainImage').style.display = 'none';
         document.getElementById('noPreviewText').style.display = 'block';
         document.getElementById('noPreviewText').innerText = "데이터를 불러오는 중입니다...";
@@ -842,53 +842,71 @@
         if (!imagesData || imagesData.length === 0) {
           mainImg.style.display = 'none';
           mainImg.src = '';
-          
           noPreviewText.innerText = "해당 차량을 촬영한 사진이 없습니다.";
           noPreviewText.style.display = 'block';
-
           thumbContainer.style.display = 'none';
           return;
         }
+        
         thumbContainer.style.display = 'flex';
+        noPreviewText.style.display = 'none';
 
-        const mainImage = imagesData[0];
+        const getImageUrl = (carId) => `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}&key=${APP_KEY}`;
 
-        if (mainImage && mainImage.base64) {
-          mainImg.src = "data:image/jpeg;base64," + mainImage.base64;
-          mainImg.style.display = 'block';
-          noPreviewText.style.display = 'none';
-          mainImg.onclick = function () { downloadFile(mainImage.fileId) };
-        } else {
-          mainImg.style.display = 'none';
-          noPreviewText.innerText = "촬영한 사진이 지워지거나 위치가 변경되었습니다.";
-          noPreviewText.style.display = 'block';
-        }
+        const firstImage = imagesData[0];
+        mainImg.src = getImageUrl(firstImage.carId);
+        mainImg.style.display = 'block';
+        mainImg.onclick = function() { downloadImageR2(firstImage.carId); };
 
         imagesData.forEach((item, index) => {
-          const { imageId, fileId, base64, fileName } = item;
-
-          if (!base64) return;
-
           const wrapper = document.createElement('div');
           wrapper.className = 'thumb-wrapper';
           if (index === 0) wrapper.classList.add('active');
-
+      
           const img = document.createElement('img');
-          img.src = "data:image/jpeg;base64," + base64;
+          img.src = getImageUrl(item.carId); // 브라우저가 비동기로 R2에서 다운로드
           img.className = 'thumb-img';
           wrapper.appendChild(img);
-
+      
           wrapper.onclick = function() {
             document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
             wrapper.classList.add('active');
-            mainImg.src = "data:image/jpeg;base64," + base64; 
-            mainImg.onclick = function () { downloadFile(fileId) };
+            mainImg.src = getImageUrl(item.carId); 
+            mainImg.onclick = function() { downloadImageR2(item.carId); };
           };
-
+      
           thumbContainer.appendChild(wrapper);
         });
       }
 
+      async function downloadImageR2(carId) {
+        try {
+          // 1. 워커에 이미지 요청 (인증키 포함)
+          const imageUrl = `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}&key=${APP_KEY}`;
+          
+          const response = await fetch(imageUrl);
+          if (!response.ok) throw new Error("이미지를 불러올 수 없습니다.");
+      
+          // 2. 응답을 Blob(바이너리)으로 변환
+          const blob = await response.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+          
+          // 3. 다운로드 트리거 (가상의 <a> 태그 클릭)
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName; // 예: bucheon3_170123456.jpg
+          document.body.appendChild(a);
+          a.click();
+          
+          // 4. 정리
+          document.body.removeChild(a);
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+      
+        } catch (error) {
+          alert("다운로드 중 오류가 발생했습니다: " + error.message);
+        }
+      }
+./*
       async function fillModalDataWorker(imagesData) {
         const mainImg = document.getElementById('mainImage');
         const noPreviewText = document.getElementById('noPreviewText');
@@ -991,7 +1009,7 @@
           alert("다운로드 중 오류가 발생했습니다: " + error.message);
         }
       }
-
+*/
       function closeModal() {
         document.getElementById('detailModal').style.display = 'none';
       }
@@ -1331,8 +1349,10 @@
         ctx.restore();
       
         try {
-          const base64Data = canvas.toDataURL("image/jpeg", 0.9).split(',')[1];
-          uploadToBackend(base64Data);
+          canvas.toBlob(function(blob) {
+            if (!blob) throw new Error("Canvas 변환 실패");
+            uploadToBackendR2(blob); // 새로운 업로드 함수 호출
+          }, "image/jpeg", 0.85); // 0.85 품질 (용량 최적화)
         } catch (error) {
           console.error("Canvas 변환 실패:", error);
           isCapturing = false;
@@ -1341,6 +1361,50 @@
         }
       }
 
+      async function uploadToBackendR2(imageBlob) {
+        const overlay = document.getElementById('uploadOverlay');
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `
+          <div style="margin-bottom: 10px; font-size: 18px;">로켓 업로드 중 🚀</div>
+          <div style="font-size: 14px; color: #aaa;">R2 스토리지에 저장 중입니다...</div>
+        `;
+      
+        try {
+          // FormData를 사용하여 파일(바이너리)과 텍스트 데이터를 한 번에 전송
+          const formData = new FormData();
+          formData.append("action", "uploadR2Image"); // 워커에서 받을 새 액션 이름
+          formData.append("key", APP_KEY);
+          formData.append("carId", currentUploadCarId);
+          formData.append("carInfo", currentUploadCarInfo);
+          formData.append("isArrival", currentUploadCarArr);
+          formData.append("imageFile", imageBlob, `image_${Date.now()}.jpg`); // 파일 첨부
+      
+          // GAS가 아닌 Cloudflare Worker로 직접 쏩니다.
+          const response = await fetch(CONFIG.WORKER_URL, {
+            method: "POST",
+            body: formData // JSON이 아닌 FormData 전송
+          });
+      
+          const result = await response.json();
+          if (result.status !== "success") {
+            throw new Error(result.message || "사진 저장 실패");
+          }
+      
+          // 워커가 R2 저장 및 시트 업데이트를 완료했으므로 리스트 갱신
+          if (navigator.vibrate) navigator.vibrate(100);
+          isCapturing = false;
+          overlay.style.display = 'none';
+          showToast("✅ 사진 저장 완료!");
+          
+          fetchData(); // 새 사진 목록 갱신
+          
+        } catch (err) {
+          isCapturing = false;
+          overlay.style.display = 'none';
+          alert("❌ 전송 실패: " + err.message);
+        }
+      }
+/*
       async function uploadToBackend(base64Data) {
         const overlay = document.getElementById('uploadOverlay');
         overlay.style.display = 'flex';
@@ -1394,7 +1458,7 @@
           alert("❌ 전송 실패: " + err.message);
         }
       }
-      
+*/
       function showToast(message) {
         let toast = document.getElementById('toastMsg');
         if (!toast) {
@@ -1417,7 +1481,7 @@
           setTimeout(() => { toast.style.display = 'none'; }, 500);
         }, 2500);
       }
-      
+/*
       async function fetchImageBlob(fileId) {
         const response = await fetch(CONFIG.WORKER_URL, {
           method: "POST",
@@ -1477,7 +1541,7 @@
               alert("사진을 다운로드 하는 중 에러가 발생했습니다. 잠시후 다시 시도해주세요. : " + error.message);
             });
       }
-
+*/
       function fetchData() {
         const refreshBtn = document.getElementById('refreshBtn');
         const statusMsg = document.getElementById('status-msg');
@@ -1641,13 +1705,13 @@
         const listItemsHTML = [];
 
         filteredData.forEach((item) => {
-          const { carId, hub, type, isArrival, wave, selectedImageID, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, reportRaw, seq } = item;
+          const { carId, hub, type, isArrival, wave, hasFile, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, seq } = item;
 
           const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
           const hubStr = UTILS.getHubDisplayName(hub);
 
-          const hasFile = selectedImageID && selectedImageID.trim() !== "";
-          const fileStatusText = hasFile ? "🖼️ " : "";
+          const hasImage = (hasFile === true || String(hasFile).toUpperCase() === "TRUE");
+          const fileStatusText = hasImage ? "🖼️ " : "";
 
           const ptNum = Number(pt) || 0;
           const rtNum = Number(rt) || 0;
@@ -1676,8 +1740,7 @@
             isArrival: isArrival,
             carStatus: isArrival 
               ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? UTILS.getUnloadingStatus(ptNum, rtNum, 2) : ""} 하차 완료` : ""}` 
-              : "미도착",
-            reportRaw: reportRaw || "-"
+              : "미도착"
           };
 
           const encodedInfo = encodeURIComponent(JSON.stringify(infoObject));
