@@ -772,7 +772,7 @@
 
       function showDetail(element) {
         const { carId, info } = element.dataset;
-        const { carInfo, carSeq, carStatus, reportRaw, isArrival } = JSON.parse(decodeURIComponent(info));
+        const { carInfo, carSeq, carStatus, reportRaw, isArrival, hubStr } = JSON.parse(decodeURIComponent(info));
 
         if (USER_TYPE === "X-mover") {
           currentUploadCarId = carId;
@@ -808,7 +808,7 @@
             if (result.data.reports) {
               document.getElementById('popReportRaw').innerText = result.data.reports;
             }
-            fillModalData(images);
+            fillModalData(images, hubStr);
           })
           .catch(err => {
             fillModalError(err.message);
@@ -832,7 +832,7 @@
         return;
       }
 
-      function fillModalData(imagesData) {
+      function fillModalData(imagesData, hubStr) {
         const mainImg = document.getElementById('mainImage');
         const noPreviewText = document.getElementById('noPreviewText');
         const thumbContainer = document.getElementById('thumbnailContainer');
@@ -875,7 +875,7 @@
             document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
             wrapper.classList.add('active');
             mainImg.src = getImageUrl(item.carId); 
-            mainImg.onclick = function() { downloadImageR2(item.carId); };
+            mainImg.onclick = function() { downloadImageR2(item.carId, hubStr); };
           };
       
           thumbContainer.appendChild(wrapper);
@@ -897,7 +897,8 @@
           // 3. 다운로드 트리거 (가상의 <a> 태그 클릭)
           const a = document.createElement('a');
           a.href = blobUrl;
-          a.download = `${hubStr}_${Date.now()}`; // 예: bucheon3_170123456.jpg
+          const safeHub = hubStr || "TS";
+          a.download = `${safeHub}_${Date.now()}`; // 예: bucheon3_170123456.jpg
           document.body.appendChild(a);
           a.click();
           
@@ -1712,7 +1713,7 @@
           const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
           const hubStr = UTILS.getHubDisplayName(hub);
 
-          const hasImage = (hasFile === true || String(hasFile).toUpperCase() === "TRUE");
+          const hasImage = (item.hasFile === true || item.hasFile === "TRUE" || item.hasFile === "true");
           const fileStatusText = hasImage ? "🖼️ " : "";
 
           const ptNum = Number(pt) || 0;
@@ -1740,6 +1741,7 @@
             carInfo: carInfo,
             carSeq: seq,
             isArrival: isArrival,
+            hubStr: hubStr,
             carStatus: isArrival 
               ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? UTILS.getUnloadingStatus(ptNum, rtNum, 2) : ""} 하차 완료` : ""}` 
               : "미도착"
