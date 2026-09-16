@@ -550,6 +550,8 @@
 
     </div>
 
+    <input type="file" id="galleryInput" accept="image/*" style="display: none;" onchange="handleGalleryUpload(event)">
+
     <canvas id="watermarkCanvas" style="display: none;"></canvas>
 
     <div id="uploadOverlay" class="modal" style="display: none; z-index: 9999; flex-direction: column; color: white; font-size: 20px; font-weight: bold; text-align: center;">
@@ -906,6 +908,83 @@
         } catch (error) {
           alert("다운로드 중 오류가 발생했습니다: " + error.message);
         }
+      }
+
+      function openGalleryForCar(event, element) {
+        event.stopPropagation();
+        const listItem = element.closest('.list-item');
+        if (!listItem) return;
+        
+        const { carId, info } = listItem.dataset; 
+        const { carInfo, carSeq, isArrival } = JSON.parse(decodeURIComponent(info));
+        
+        // 전역 변수에 현재 차량 정보 셋팅 (카메라 촬영과 동일)
+        currentUploadCarId = carId;
+        currentUploadCarSeq = carSeq;
+        currentUploadCarInfo = carInfo;
+        currentUploadCarArr = isArrival;
+        
+        // 숨겨진 파일 선택창 강제 클릭
+        document.getElementById('galleryInput').click();
+      }
+
+      function handleGalleryUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        // 다음에 같은 파일을 또 고를 수 있도록 input 초기화
+        event.target.value = '';
+
+        const overlay = document.getElementById('uploadOverlay');
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `
+          <div style="margin-bottom: 10px; font-size: 18px;">사진 압축 및 저장 중 ⏳</div>
+          <div style="font-size: 14px; color: #aaa;">잠시만 기다려주세요...</div>
+        `;
+
+        // 스마트폰 원본 사진 용량 압축 (Canvas 활용)
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 최대 해상도를 1440px로 제한 (속도 및 용량 최적화)
+            const MAX_SIZE = 1440;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > height) {
+              if (width > MAX_SIZE) {
+                height *= MAX_SIZE / width;
+                width = MAX_SIZE;
+              }
+            } else {
+              if (height > MAX_SIZE) {
+                width *= MAX_SIZE / height;
+                height = MAX_SIZE;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // 캔버스를 바이너리 Blob으로 변환하여 기존 R2 업로드 함수 호출
+            canvas.toBlob(function(blob) {
+              if (!blob) {
+                overlay.style.display = 'none';
+                alert("이미지 처리 실패");
+                return;
+              }
+              // 만들어 두신 R2 업로드 함수를 그대로 재활용!
+              uploadToBackendR2(blob);
+            }, "image/jpeg", 0.85); // 0.85는 압축 품질
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
       }
 /*
       async function fillModalDataWorker(imagesData) {
@@ -1763,7 +1842,16 @@
                     📸
                   </button>
                 ` : ""}
-                ${fileStatusText}<small>${UTILS.escapeHtml(carInfo)}</small></span>
+                ${fileStatusText}<small>${UTILS.escapeHtml(carInfo)}</small>
+                  <button type="button" 
+                            onclick="openGalleryForCar(event, this)" 
+                            title="갤러리 사진 업로드"
+                            style="background: transparent; border: none; font-size: clamp(18px, 2.5vh, 28px); margin: 0 2px; padding: 4px; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; transition: transform 0.1s;"
+                            onmousedown="this.style.transform='scale(0.85)'" 
+                            onmouseup="this.style.transform='scale(1)'">
+                      📁
+                  </button>
+                </span>
               <span class="badge ${badgeClass}"><small>${statusText}</small></span>
             </div>
           `);
