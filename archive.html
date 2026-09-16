@@ -853,10 +853,13 @@
 
         const getImageUrl = (carId) => `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}&key=${APP_KEY}`;
 
+        const match = currentUploadCarInfo.match(/^[★◇]?(.*?)\s*\|/);
+        const hubStr = match ? match[1].trim() : "";
+
         const firstImage = imagesData[0];
         mainImg.src = getImageUrl(firstImage.carId);
         mainImg.style.display = 'block';
-        mainImg.onclick = function() { downloadImageR2(firstImage.carId); };
+        mainImg.onclick = function() { downloadImageR2(firstImage.carId, hubStr); };
 
         imagesData.forEach((item, index) => {
           const wrapper = document.createElement('div');
@@ -879,7 +882,7 @@
         });
       }
 
-      async function downloadImageR2(carId) {
+      async function downloadImageR2(carId, hubStr) {
         try {
           // 1. 워커에 이미지 요청 (인증키 포함)
           const imageUrl = `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}&key=${APP_KEY}`;
@@ -894,7 +897,7 @@
           // 3. 다운로드 트리거 (가상의 <a> 태그 클릭)
           const a = document.createElement('a');
           a.href = blobUrl;
-          a.download = fileName; // 예: bucheon3_170123456.jpg
+          a.download = `${hubStr}_${Date.now()}`; // 예: bucheon3_170123456.jpg
           document.body.appendChild(a);
           a.click();
           
