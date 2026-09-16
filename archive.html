@@ -1365,24 +1365,23 @@
         const overlay = document.getElementById('uploadOverlay');
         overlay.style.display = 'flex';
         overlay.innerHTML = `
-          <div style="margin-bottom: 10px; font-size: 18px;">로켓 업로드 중 🚀</div>
-          <div style="font-size: 14px; color: #aaa;">R2 스토리지에 저장 중입니다...</div>
+          <div style="margin-bottom: 10px; font-size: 18px;">사진 업로드 중 📡</div>
+          <div style="font-size: 14px; color: #aaa;">스토리지에 저장 중입니다...</div>
         `;
       
         try {
+
+          const carId = currentUploadCarId;
+          
           // FormData를 사용하여 파일(바이너리)과 텍스트 데이터를 한 번에 전송
           const formData = new FormData();
-          formData.append("action", "uploadR2Image"); // 워커에서 받을 새 액션 이름
-          formData.append("key", APP_KEY);
-          formData.append("carId", currentUploadCarId);
-          formData.append("carInfo", currentUploadCarInfo);
+          formData.append("carId", carId);
           formData.append("isArrival", currentUploadCarArr);
-          formData.append("imageFile", imageBlob, `image_${Date.now()}.jpg`); // 파일 첨부
+          formData.append("imageFile", imageBlob, `${carId}_${Date.now()}.jpg`); // 파일 첨부
       
-          // GAS가 아닌 Cloudflare Worker로 직접 쏩니다.
-          const response = await fetch(CONFIG.WORKER_URL, {
+          const response = await fetch(`${CONFIG.WORKER_URL}?action=uploadR2Image&key=${APP_KEY}`, {
             method: "POST",
-            body: formData // JSON이 아닌 FormData 전송
+            body: formData
           });
       
           const result = await response.json();
