@@ -354,6 +354,11 @@
         object-fit: contain;
       }
 
+      .main-preview-img, .thumb-img {
+        will-change: transform;
+        transform: translateZ(0);
+      }
+
       #noPreviewText {
         position: absolute;
         top: 50%;
@@ -858,6 +863,7 @@
         const getImageUrl = (carId) => `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}&key=${APP_KEY}`;
 
         const firstImage = imagesData[0];
+        mainImg.decoding = "async";
         mainImg.src = getImageUrl(firstImage.carId);
         mainImg.style.display = 'block';
         mainImg.onclick = function() { downloadImageR2(firstImage.carId, hubStr); };
@@ -868,6 +874,8 @@
           if (index === 0) wrapper.classList.add('active');
       
           const img = document.createElement('img');
+          img.decoding = "async";
+          img.loading = "lazy";
           img.src = getImageUrl(item.carId); // 브라우저가 비동기로 R2에서 다운로드
           img.className = 'thumb-img';
           wrapper.appendChild(img);
