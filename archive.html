@@ -641,6 +641,8 @@
 
       let isCapturing = false;
 
+      let silentSyncTimer = null;
+
       window.onerror = function(msg, url, line) {
         var statusMsg = document.getElementById('status-msg');
         if(statusMsg) {
@@ -1475,12 +1477,94 @@
           overlay.style.display = 'none';
           showToast("✅ 사진 저장 완료!");
           
-          fetchData(); // 새 사진 목록 갱신
+          applyOptimisticUI(carId);
+          updateLocalCache(carId);
           
         } catch (err) {
           isCapturing = false;
           overlay.style.display = 'none';
           alert("❌ 전송 실패: " + err.message);
+        }
+      }
+
+      
+      function applyOptimisticUI(carId) {
+        const cached = localStorage.getItem("CACHED_DASHBOARD_DATA");
+        if (!cached) return;
+      
+        try {
+          const list = JSON.parse(cached);
+          const target = list.find(item => item.carId === carId);
+      
+          if (target) {
+            target.hasFile = true;
+      
+            // 미도착 차량일 때만 도착으로 전환
+            if (!target.isArrival) {
+              target.isArrival = true;
+              const now = new Date();
+              target.arrivalTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            }
+      
+            // 우선순위 가상 정렬
+            const getPriority = (item) => {
+              if (!item.isArrival && item.hub === "부천3") return 2.5;
+              if (item.isArrival && !item.isUnloaded) return 1;
+              if (!item.isArrival) return 2;
+              return 3;
+            };
+      
+            list.sort((a, b) => {
+              const pA = getPriority(a);
+              const pB = getPriority(b);
+              if (pA !== pB) return pA - pB;
+              return (a.seq || 0) - (b.seq || 0);
+            });
+      
+            // 로컬 스토리지 반영 및 화면 즉시 렌더링
+            localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(list));
+            updateUI(list);
+      
+            // 3.5초 뒤 서버 데이터로 조용히 자동 동기화
+            if (silentSyncTimer) clearTimeout(silentSyncTimer);
+            silentSyncTimer = setTimeout(() => {
+              // 이때는 스피너를 돌리지 않고 조용히 백그라운드에서 fetch만 수행
+              fetchSilentData();
+            }, 3500);
+          }
+        } catch (e) {
+          console.error("낙관적 UI 반영 실패:", e);
+        }
+      }
+      
+      // 스피너나 UI 방해 없이 조용히 서버 데이터를 덮어쓰는 함수
+      function fetchSilentData() {
+        fetch(`${CONFIG.WORKER_URL}?action=getDashboard&key=${APP_KEY}`)
+          .then(res => res.json())
+          .then(result => {
+            if (result.status === "success") {
+              localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
+              updateUI(result.data);
+            }
+          })
+          .catch(err => console.log("백그라운드 동기화 실패 (무시됨):", err));
+      }
+
+      function updateLocalCache(carId) {
+        const cached = localStorage.getItem("CACHED_DASHBOARD_DATA");
+        if (!cached) return;
+        try {
+          const list = JSON.parse(cached);
+          const target = list.find(item => item.carId === carId);
+          if (target) {
+            target.hasFile = true;
+            if (!target.isArrival) {
+              target.isArrival = true;
+            }
+            localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(list));
+          }
+        } catch (e) {
+          console.error("캐시 낙관적 갱신 실패", e);
         }
       }
 /*
@@ -1843,6 +1927,7 @@
                   </button>
                 ` : ""}
                 ${fileStatusText}<small>${UTILS.escapeHtml(carInfo)}</small>
+                ${(USER_TYPE === "ADMIN" || USER_TYPE === "X-mover") ? `
                   <button type="button" 
                             onclick="openGalleryForCar(event, this)" 
                             title="갤러리 사진 업로드"
@@ -1851,6 +1936,7 @@
                             onmouseup="this.style.transform='scale(1)'">
                       📁
                   </button>
+                ` : ""}
                 </span>
               <span class="badge ${badgeClass}"><small>${statusText}</small></span>
             </div>
