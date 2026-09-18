@@ -981,125 +981,20 @@
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
             
-            // 캔버스를 바이너리 Blob으로 변환하여 기존 R2 업로드 함수 호출
             canvas.toBlob(function(blob) {
               if (!blob) {
                 overlay.style.display = 'none';
                 alert("이미지 처리 실패");
                 return;
               }
-              // 만들어 두신 R2 업로드 함수를 그대로 재활용!
               uploadToBackendR2(blob);
-            }, "image/jpeg", 0.85); // 0.85는 압축 품질
+            }, "image/jpeg", 0.8);
           };
           img.src = e.target.result;
         };
         reader.readAsDataURL(file);
       }
-/*
-      async function fillModalDataWorker(imagesData) {
-        const mainImg = document.getElementById('mainImage');
-        const noPreviewText = document.getElementById('noPreviewText');
-        const thumbContainer = document.getElementById('thumbnailContainer');
-
-        thumbContainer.innerHTML = '';
-
-        if (!imagesData || !imagesData.imageInfo || imagesData.imageInfo.length === 0) {
-          mainImg.style.display = 'none';
-          mainImg.src = '';
-          
-          noPreviewText.innerText = "해당 차량을 촬영한 사진이 없습니다.";
-          noPreviewText.style.display = 'block';
-
-          thumbContainer.style.display = 'none';
-          return;
-        }
-        thumbContainer.style.display = 'flex';
-        noPreviewText.innerText = "사진을 다운로드/표시하는 중...";
       
-        const imageList = imagesData.imageInfo;
-        const firstImg = imageList[0];
-      
-        // 1. 메인 첫 번째 이미지 비동기 로드
-        try {
-          const mainBlobUrl = await fetchImageBlob(firstImg.fileId);
-          mainImg.src = mainBlobUrl;
-          mainImg.style.display = 'block';
-          noPreviewText.style.display = 'none';
-          mainImg.onclick = function() { downloadImage(firstImg.fileId, firstImg.fileName); };
-        } catch (err) {
-          noPreviewText.innerText = "메인 이미지를 불러오지 못했습니다.";
-        }
-      
-        // 2. 썸네일 리스트 생성 (순차 비동기 로드)
-        for (let i = 0; i < imageList.length; i++) {
-          const item = imageList[i];
-          const wrapper = document.createElement('div');
-          wrapper.className = 'thumb-wrapper';
-          if (i === 0) wrapper.classList.add('active');
-      
-          const img = document.createElement('img');
-          img.className = 'thumb-img';
-          wrapper.appendChild(img);
-          thumbContainer.appendChild(wrapper);
-      
-          // 각 썸네일 비동기 할당
-          fetchImageBlob(item.fileId).then(blobUrl => {
-            img.src = blobUrl;
-            wrapper.onclick = function() {
-              document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
-              wrapper.classList.add('active');
-              mainImg.src = blobUrl;
-              mainImg.onclick = function() { downloadImage(item.fileId, item.fileName); };
-            };
-          }).catch(e => {
-            img.alt = "로딩 실패";
-          });
-        }
-      }
-
-      function downloadBase64(base64Data, fileName) {
-        if (!base64Data) return;
-        const name = fileName || "car_image.jpg";
-
-        try {
-          // Base64를 Blob 객체로 변환
-          const byteCharacters = atob(base64Data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: "image/jpeg" });
-          const blobUrl = window.URL.createObjectURL(blob);
-
-          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-          if (isMobile) {
-            // [모바일] 새 탭에 띄워 꾹 눌러 저장하도록 유도 (보안 차단 우회)
-            const newTab = window.open();
-            if (newTab) {
-              newTab.document.write(`<img src="${blobUrl}" style="max-width:100%; height:auto;" alt="download" />`);
-              newTab.document.title = name;
-            } else {
-              window.location.href = blobUrl;
-            }
-            showToast("💡 사진을 꾹 누르면 [사진 저장]이 가능합니다.");
-          } else {
-            // [PC] 즉시 자동 다운로드
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = name;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-          }
-        } catch (error) {
-          alert("다운로드 중 오류가 발생했습니다: " + error.message);
-        }
-      }
-*/
       function closeModal() {
         document.getElementById('detailModal').style.display = 'none';
       }
@@ -1399,7 +1294,7 @@
         ctx.shadowOffsetY = 0;
         ctx.fillStyle = "#ffffff";
       
-        const marginX = width * 0.04;
+        const marginX = width * 0.045;
         const marginTop = height * 0.025;
         const marginBottom = height * 0.045;
       
@@ -1430,15 +1325,15 @@
         // 4. 차량 번호
         if (includeCarNumber && carNum) {
           ctx.textAlign = "right";
-          ctx.fillText(carNum, width - marginX, marginTop);
+          ctx.fillText(carNum, width * 0.96, marginTop);
         }
         ctx.restore();
       
         try {
           canvas.toBlob(function(blob) {
             if (!blob) throw new Error("Canvas 변환 실패");
-            uploadToBackendR2(blob); // 새로운 업로드 함수 호출
-          }, "image/jpeg", 0.85); // 0.85 품질 (용량 최적화)
+            uploadToBackendR2(blob);
+          }, "image/jpeg", 0.8); // 0.8 품질 (용량 최적화)
         } catch (error) {
           console.error("Canvas 변환 실패:", error);
           isCapturing = false;
@@ -1571,61 +1466,7 @@
           console.error("캐시 낙관적 갱신 실패", e);
         }
       }
-/*
-      async function uploadToBackend(base64Data) {
-        const overlay = document.getElementById('uploadOverlay');
-        overlay.style.display = 'flex';
-        overlay.innerHTML = `
-          <div style="margin-bottom: 10px; font-size: 18px;">사진 저장 중 📡</div>
-          <div style="font-size: 14px; color: #aaa;">잠시만 기다려주세요...</div>
-        `;
-        try {
-          const res1 = await fetch(CONFIG.GAS_URL, {
-            method: "POST",
-            body: JSON.stringify({
-              action: "uploadWatermarkImage",
-              key: APP_KEY,
-              carId: currentUploadCarId,
-              carInfo: currentUploadCarInfo,
-              isArrival: currentUploadCarArr,
-              image: base64Data
-            })
-          });
       
-          const result1 = await res1.json();
-          if (result1.status !== "success") {
-            throw new Error(result1.message || "사진 저장 실패");
-          }
-      
-          // 앱시트 동기화 비동기 백그라운드 호출
-          fetch(CONFIG.GAS_URL, {
-            method: "POST",
-            keepalive: true,
-            body: JSON.stringify({
-              action: "syncAppSheet",
-              key: APP_KEY,
-              ...result1.data
-            })
-          })
-          .then(res => res.json())
-          .then(result2 => {
-            console.log("✅ 백그라운드 앱시트 연동 완료:", result2);
-            fetchData(); // 업로드 후 새 사진 목록 갱신
-          })
-          .catch(err => console.error("앱시트 연동 에러:", err));
-          
-          if (navigator.vibrate) navigator.vibrate(100);
-          isCapturing = false;
-          overlay.style.display = 'none';
-          showToast("✅ 사진 저장 완료!");
-          
-        } catch (err) {
-          isCapturing = false;
-          overlay.style.display = 'none';
-          alert("❌ 전송 실패: " + err.message);
-        }
-      }
-*/
       function showToast(message) {
         let toast = document.getElementById('toastMsg');
         if (!toast) {
@@ -1648,67 +1489,7 @@
           setTimeout(() => { toast.style.display = 'none'; }, 500);
         }, 2500);
       }
-/*
-      async function fetchImageBlob(fileId) {
-        const response = await fetch(CONFIG.WORKER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "viewImage",
-            key: APP_KEY, // POST 바디에 안전하게 담김
-            fileId: fileId
-          })
-        });
-        if (!response.ok || (contentType && contentType.includes("application/json"))) {
-          const errData = await response.json().catch(() => ({ message: response.statusText }));
-          console.error(`❌ 이미지 로드 실패 [${fileId}]:`, errData);
-          throw new Error(errData.message || "이미지 로드 실패");
-        }
-        const blob = await response.blob();
-        return window.URL.createObjectURL(blob);
-      }
-
-      async function downloadImage(fileId, fileName) {
-        try {
-          const blobUrl = await fetchImageBlob(fileId);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = fileName || "download_image.jpg";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        } catch (error) {
-          alert("다운로드 중 오류가 발생했습니다.");
-        }
-      }
-
-      function downloadFile(fileId) {
-        if (!fileId || fileId.trim() === "") return;
-
-        fetch(`${CONFIG.GAS_URL}?action=getFileData&key=${APP_KEY}&fileId=${fileId}`, { redirect: "follow" })
-            .then(response => response.json())
-            .then(result => {
-              var fileObj = result.data;
-              var byteCharacters = atob(fileObj.base64);
-              var byteNumbers = new Array(byteCharacters.length);
-              for (var i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-              }
-              var byteArray = new Uint8Array(byteNumbers);
-              var blob = new Blob([byteArray], {type: fileObj.mimeType});
-  
-              var link = document.createElement('a');
-              link.href = window.URL.createObjectURL(blob);
-              link.download = fileObj.filename;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            })
-            .catch(error => {
-              alert("사진을 다운로드 하는 중 에러가 발생했습니다. 잠시후 다시 시도해주세요. : " + error.message);
-            });
-      }
-*/
+      
       function fetchData() {
         const refreshBtn = document.getElementById('refreshBtn');
         const statusMsg = document.getElementById('status-msg');
