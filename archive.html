@@ -1294,11 +1294,11 @@
         ctx.shadowOffsetY = 0;
         ctx.fillStyle = "#ffffff";
       
-        const marginX = width * 0.045;
+        const marginX = width * 0.04;
         const marginTop = height * 0.025;
         const marginBottom = height * 0.045;
       
-        const timeTextSize = height * 0.11;
+        const timeTextSize = height * 0.115;
         const dateTextSize = height * 0.04;
         const topTextSize = height * 0.04;
       
@@ -1325,7 +1325,7 @@
         // 4. 차량 번호
         if (includeCarNumber && carNum) {
           ctx.textAlign = "right";
-          ctx.fillText(carNum, width * 0.96, marginTop);
+          ctx.fillText(carNum, (width - marginX), marginTop);
         }
         ctx.restore();
       
