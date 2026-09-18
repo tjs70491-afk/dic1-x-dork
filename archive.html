@@ -1369,10 +1369,6 @@
         document.getElementById('uploadOverlay').style.display = 'flex';
       
         try {
-          await Promise.race([
-            document.fonts.ready,
-            new Promise(resolve => setTimeout(resolve, 1500))
-          ]);
           renderWatermark(canvas, ctx);
         } catch (err) {
           console.error("워터마크 처리 중 에러:", err);
