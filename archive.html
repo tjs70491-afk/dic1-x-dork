@@ -1169,48 +1169,69 @@
         reader.readAsDataURL(file);
       }
       
-      // 최종 데이터 등록 (0.2초 초고속 등록 및 백그라운드 싱크)
+      // 최종 서버 전송
       function submitCardData() {
         const cards = document.querySelectorAll('.add-card');
-        const payload = [];
+        const cardPayloads = [];
       
         cards.forEach(card => {
+          const img = card.querySelector('.photo-img');
+          const hasPhoto = img && img.style.display === 'block';
+          let imageBase64 = null;
+          if (img && img.style.display === 'block' && img.src.includes('base64,')) {
+            imageBase64 = img.src.split('base64,')[1];
+          }
+          
           const wave = card.querySelector('.wave-select').value;
           const rows = card.querySelectorAll('.card-data-row');
-      
+          const imageId = (hasPhoto) ? UTILS.generateUniqueID() : "directly";
+
+          const vehicles = [];
           rows.forEach(row => {
             let hub = row.querySelector('.row-hub-select').value;
             const carNum = row.querySelector('.row-carnum-input').value.trim();
       
             if (hub === "직접선택") hub = "";
-            if (hub !== "" || carNum !== "") {
-              payload.push({ wave: wave, hub: hub, carNum: carNum });
+      
+            // 허브가 적혀있다면 전송 대상에 포함
+            if (hub !== "") {
+              vehicles.push({ hub: hub, carNum: carNum });
             }
           });
+          
+          if (vehicles.length > 0) {
+            cardPayloads.push({
+              wave: wave,
+              imageId: imageId,
+              imageBase64: imageBase64, // 해당 카드의 사진
+              vehicles: vehicles
+            });
+          }
         });
       
-        if (payload.length === 0) return alert("추가할 차량 데이터가 없습니다.");
+        if (cardPayloads.length === 0) return alert("추가할 차량 데이터가 없습니다.");
       
         const btn = document.querySelector('.btn-submit');
         btn.innerText = "처리 중..."; btn.disabled = true;
       
-        fetch(`${CONFIG.WORKER_URL}?action=addManualList&key=${APP_KEY}`, {
+        const targetUrl = CONFIG.WORKER_URL;
+        fetch(`${targetUrl}?action=addManualList&key=${APP_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ listData: payload })
+          body: JSON.stringify({ cardPayloads: cardPayloads })
         })
         .then(res => res.json())
         .then(result => {
           if (result.status === "success") {
-            alert("✅ 차량 등록 요청이 완료되었습니다.");
+            UTILS.showToast("✅ 차량 등록 요청이 완료되었습니다.");
             
-            // 즉시 닫기
+            // 모달 즉시 닫기
             document.getElementById('cardContainer').innerHTML = '';
             document.getElementById('addCardModal').style.display = 'none';
             
-            // 앱시트 백그라운드 저장 완료 시간을 고려해 2.5초 뒤 대시보드 갱신
+            // 앱시트 백그라운드 쓰기 시간을 고려해 2.5초 뒤 조용히 목록 갱신
             setTimeout(() => {
-              if (typeof fetchData === "function") fetchData();
+              if (typeof fetchData === "function") fetchData(false);
             }, 2500);
           } else {
             alert("추가 실패: " + result.message);
@@ -1395,7 +1416,7 @@
         .then(res => res.json())
         .then(result => {
           if (result.status === "success") {
-            alert("✅ 차량 정보가 수정되었습니다.");
+            UTILS.showToast("✅ 차량 정보가 수정되었습니다.");
             closeModal();
             // 앱시트 백그라운드 반영 대기 후 목록 새로고침
             setTimeout(() => { if (typeof fetchData === "function") fetchData(); }, 2000);
@@ -1423,7 +1444,7 @@
         .then(res => res.json())
         .then(result => {
           if (result.status === "success") {
-            alert("🗑️ 차량이 성공적으로 삭제되었습니다.");
+            UTILS.showToast("🗑️ 차량이 성공적으로 삭제되었습니다.");
             closeModal();
             // 앱시트 백그라운드 반영 대기 후 목록 새로고침
             setTimeout(() => { if (typeof fetchData === "function") fetchData(); }, 2000);
@@ -2027,7 +2048,7 @@
           if (navigator.vibrate) navigator.vibrate(100);
           isCapturing = false;
           overlay.style.display = 'none';
-          showToast("✅ 사진 저장 완료!");
+          UTILS.showToast("✅ 사진 저장 완료!");
           
           applyOptimisticUI(carId);
           updateLocalCache(carId);
@@ -2118,29 +2139,6 @@
         } catch (e) {
           console.error("캐시 낙관적 갱신 실패", e);
         }
-      }
-      
-      function showToast(message) {
-        let toast = document.getElementById('toastMsg');
-        if (!toast) {
-          toast = document.createElement('div');
-          toast.id = 'toastMsg';
-          toast.style.cssText = `
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85); color: #fff; padding: 10px 20px;
-            border-radius: 25px; font-size: 14px; z-index: 10000; transition: opacity 0.5s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); pointer-events: none;
-          `;
-          document.body.appendChild(toast);
-        }
-        toast.innerText = message;
-        toast.style.opacity = '1';
-        toast.style.display = 'block';
-      
-        setTimeout(() => {
-          toast.style.opacity = '0';
-          setTimeout(() => { toast.style.display = 'none'; }, 500);
-        }, 2500);
       }
       
       function fetchData() {
