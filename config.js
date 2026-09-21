@@ -201,5 +201,14 @@ const UTILS = {
       String(now.getMinutes()).padStart(2, '0'),
       String(now.getSeconds()).padStart(2, '0')
     ].join(':');
+  },
+
+  generateUniqueID: function() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   }
 };
