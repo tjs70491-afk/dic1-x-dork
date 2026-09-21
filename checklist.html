@@ -721,8 +721,36 @@
           event.stopPropagation();
           event.preventDefault();
         }
+      
         const targetCard = document.getElementById(cardId);
-        if (targetCard) targetCard.remove();
+        if (!targetCard) return;
+      
+        // 1. 해당 카드에 사진이 업로드되었는지 확인
+        const img = targetCard.querySelector('.photo-img');
+        const hasPhoto = img && img.style.display === 'block';
+      
+        // 2. 해당 카드 내부 행에 작성된 데이터가 있는지 확인
+        let hasData = false;
+        const rows = targetCard.querySelectorAll('.card-data-row');
+        for (let row of rows) {
+          const hub = row.querySelector('.row-hub-select').value;
+          const carNum = row.querySelector('.row-carnum-input').value.trim();
+          if ((hub !== "직접선택" && hub !== "") || carNum !== "") {
+            hasData = true;
+            break;
+          }
+        }
+      
+        // 3. 사진이나 데이터가 1개라도 있다면 삭제 전 사용자 확인(되묻기)
+        if (hasPhoto || hasData) {
+          const confirmDelete = confirm(
+            "⚠️ 이 카드에 이미 분석된 사진이나 입력된 데이터가 있습니다.\n정말 이 카드를 삭제하시겠습니까?\n(AI 분석 비용이 소모된 상태입니다.)"
+          );
+          if (!confirmDelete) return; // 취소 누르면 삭제 중단
+        }
+      
+        // 데이터가 없거나, 확인을 누른 경우에만 최종 삭제
+        targetCard.remove();
       }
       
       // 허브 드롭다운 옵션 HTML 생성기
