@@ -313,7 +313,7 @@
       }
       .add-modal-content {
         background: white; width: 95%; max-width: 600px; padding: 20px; border-radius: 12px;
-        display: flex; flex-direction: column; max-height: 85vh;
+        display: flex; flex-direction: column; max-height: 95vh;
       }
       .add-modal-header {
         display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
@@ -333,7 +333,7 @@
       
       /* 개별 카드 */
       .add-card {
-        flex: 0 0 210px; /* 130px -> 210px로 확장 */
+        flex: 0 0 160px; /* 130px -> 210px로 확장 */
         display: flex;
         flex-direction: column;
         gap: 8px;
@@ -347,7 +347,7 @@
       .photo-box-wrap {
         position: relative;
         width: 100%;
-        height: 95px;
+        height: 150px;
       }
       
       /* 실제 사진 클릭 영역 (label) */
@@ -427,7 +427,7 @@
       
       /* 카드 내부의 동적 행 컨테이너 (세로 스크롤 가능) */
       .card-rows-container {
-        width: 100%; height: 210px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+        width: 100%; height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
         padding-right: 3px; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 6px; box-sizing: border-box;
       }
       
@@ -436,7 +436,7 @@
         display: flex; gap: 4px; align-items: center; width: 100%;
       }
       .row-hub-select {
-        width: 82px; padding: 4px 2px; font-size: 12px; font-weight: 600;
+        width: 72px; padding: 4px 2px; font-size: 12px; font-weight: 600;
         border: 1px solid #94a3b8; border-radius: 4px; outline: none; background: #fff;
       }
       .row-carnum-input {
@@ -490,6 +490,42 @@
       .btn-submit { background: white; border: 2px solid #0f172a; color: #0f172a; }
       .btn-submit:hover { background: #f8fafc; }
       .btn-cancel { background: white; border: 2px solid #0f172a; color: #0f172a; }
+
+      /* 체크리스트 전용 수정 모달 */
+      .edit-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 12px;
+        text-align: left;
+      }
+      .edit-form-group label {
+        font-size: 12px;
+        font-weight: bold;
+        color: #5f6368;
+      }
+      .edit-form-group select, .edit-form-group input {
+        padding: 8px 10px;
+        border: 1px solid #dadce0;
+        border-radius: 6px;
+        font-size: 14px;
+        outline: none;
+        box-sizing: border-box;
+        width: 100%;
+      }
+      .edit-modal-btns {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .btn-edit-submit {
+        flex: 1; background: #1a73e8; color: white; border: none; padding: 10px;
+        border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer;
+      }
+      .btn-edit-cancel {
+        flex: 1; background: #f1f3f4; color: #3c4043; border: none; padding: 10px;
+        border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer;
+      }
     
     </style>
     
@@ -595,6 +631,36 @@
         <div class="add-modal-footer">
           <button type="button" class="btn-submit" onclick="submitCardData()">추가하기</button>
           <button type="button" class="btn-cancel" onclick="closeCardModal()">취소</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="checklistEditModal" class="modal-overlay" onclick="closeChecklistEditModalOnOutside(event)">
+      <div class="modal-content" style="max-width: 320px;">
+        <h3 style="margin-top: 0;">✏️ 차량 정보 수정</h3>
+        <input type="hidden" id="chkEditCarId">
+
+        <div class="edit-form-group">
+          <label>Wave</label>
+          <select id="chkEditWave">
+            <option value="1W">1W</option>
+            <option value="2W">2W</option>
+          </select>
+        </div>
+
+        <div class="edit-form-group">
+          <label>허브</label>
+          <select id="chkEditHub"></select>
+        </div>
+
+        <div class="edit-form-group">
+          <label>차량번호</label>
+          <input type="text" id="chkEditCarNum" placeholder="차량번호 (예: 경기80바6311)">
+        </div>
+
+        <div class="edit-modal-btns">
+          <button type="button" class="btn-edit-submit" onclick="submitChecklistEdit()">수정 완료</button>
+          <button type="button" class="btn-edit-cancel" onclick="closeChecklistEditModal()">취소</button>
         </div>
       </div>
     </div>
@@ -987,6 +1053,108 @@
         }
       }
 
+      function openChecklistEditModal(event, btnElement) {
+        event.stopPropagation(); // 체크박스나 행 클릭 방지
+      
+        const cId = btnElement.getAttribute('data-cid');
+        const wave = btnElement.getAttribute('data-wave');
+        const hub = btnElement.getAttribute('data-hub');
+        const carNum = btnElement.getAttribute('data-carnum');
+      
+        document.getElementById('chkEditCarId').value = cId;
+        document.getElementById('chkEditWave').value = wave || "2W";
+        document.getElementById('chkEditCarNum').value = carNum || "";
+      
+        // 허브 드롭다운 채우기
+        const hubSelect = document.getElementById('chkEditHub');
+        let isMatched = false;
+        let optionsHtml = HUB_LIST.map(h => {
+          const isSelected = (h === hub);
+          if (isSelected) isMatched = true;
+          return `<option value="${h}" ${isSelected ? 'selected' : ''}>${h}</option>`;
+        }).join('');
+      
+        if (hub && !isMatched && hub !== "직접선택") {
+          optionsHtml = `<option value="${hub}" selected>${hub}</option>` + optionsHtml;
+        }
+        hubSelect.innerHTML = optionsHtml;
+      
+        document.getElementById('checklistEditModal').classList.add('active');
+      }
+      
+      function closeChecklistEditModal() {
+        document.getElementById('checklistEditModal').classList.remove('active');
+      }
+      
+      function closeChecklistEditModalOnOutside(event) {
+        if (event.target.id === 'checklistEditModal') closeChecklistEditModal();
+      }
+      
+      // 2. 수정 내용 백엔드(Worker)로 전송
+      function submitChecklistEdit() {
+        const carId = document.getElementById('chkEditCarId').value;
+        const wave = document.getElementById('chkEditWave').value;
+        const hub = document.getElementById('chkEditHub').value;
+        const carNumber = document.getElementById('chkEditCarNum').value.trim();
+      
+        if (hub === "직접선택" || hub === "") {
+          return alert("허브를 올바르게 선택해 주세요.");
+        }
+      
+        const payload = { carId, wave, hub, carNumber };
+        const targetUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
+      
+        fetch(`${targetUrl}?action=editVehicle&key=${APP_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === "success") {
+            alert("✅ 차량 정보가 수정되었습니다.");
+            closeChecklistEditModal();
+            // 앱시트 동기화 대기 후 목록 갱신
+            setTimeout(() => { fetchData(false); }, 2000);
+          } else {
+            alert("수정 실패: " + result.message);
+          }
+        })
+        .catch(err => alert("통신 오류가 발생했습니다."));
+      }
+      
+      // 3. 차량 삭제 요청 (확인창)
+      function confirmDeleteChecklistCar(event, btnElement) {
+        event.stopPropagation(); // 체크박스나 행 클릭 방지
+      
+        const cId = btnElement.getAttribute('data-cid');
+        const carInfo = btnElement.getAttribute('data-info');
+      
+        const confirmDel = confirm(
+          `🚨 [${carInfo}] 차량을 삭제하시겠습니까?\n구글 시트에서도 완전히 삭제되며 복구할 수 없습니다.`
+        );
+        if (!confirmDel) return;
+      
+        const targetUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
+      
+        fetch(`${targetUrl}?action=deleteVehicle&key=${APP_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ carId: cId })
+        })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === "success") {
+            alert("🗑️ 차량이 성공적으로 삭제되었습니다.");
+            // 앱시트 동기화 대기 후 목록 갱신
+            setTimeout(() => { fetchData(false); }, 2000);
+          } else {
+            alert("삭제 실패: " + result.message);
+          }
+        })
+        .catch(err => alert("통신 오류가 발생했습니다."));
+      }
+
       function filterList() {
         var searchInput = document.getElementById('searchInput').value;
         var query = searchInput.toLowerCase().trim();
@@ -1341,6 +1509,17 @@
                 checkIcon +
               '</button>' +
               '<span class="car-info ' + (unl ? "text-unloaded" : "") + '">' + carInfo + '</span>' +
+              (!unl ? (
+                '<div class="item-actions">' +
+                  '<button type="button" class="btn-item-action btn-item-edit" title="수정" ' +
+                    'data-cid="' + cId + '" data-wave="' + itemWave + '" data-hub="' + hub + '" data-carnum="' + carN + '" ' +
+                    'onclick="openChecklistEditModal(event, this)">✏️</button>' +
+                  '<button type="button" class="btn-item-action btn-item-del" title="삭제" ' +
+                    'data-cid="' + cId + '" data-info="' + carInfo + '" ' +
+                    'onclick="confirmDeleteChecklistCar(event, this)">🗑️</button>' +
+                '</div>'
+              ) : '') +
+
             '</div>');
         });
         
