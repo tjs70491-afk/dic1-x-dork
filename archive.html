@@ -403,6 +403,28 @@
         align-items: flex-start;
       }
 
+      .veh-action-zone {
+        margin-top: 15px; padding-top: 12px; border-top: 1px solid #e2e8f0;
+      }
+      .veh-btn-group { display: flex; gap: 8px; }
+      .btn-veh-action {
+        flex: 1; padding: 8px; font-size: 13px; font-weight: bold; border-radius: 6px; cursor: pointer;
+      }
+      .btn-veh-edit { background: #e8f0fe; color: #1a73e8; border: 1px solid #d2e3fc; }
+      .btn-veh-del { background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
+      
+      /* 인라인 수정 폼 (기본 숨김) */
+      .veh-edit-form {
+        display: none; flex-direction: column; gap: 8px; margin-top: 10px; text-align: left;
+      }
+      .veh-edit-form label { font-size: 11px; color: #64748b; font-weight: bold; }
+      .veh-edit-row { display: flex; gap: 6px; }
+      .veh-edit-form select, .veh-edit-form input {
+        padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; outline: none;
+      }
+      .btn-save-edit { background: #1a73e8; color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+      .btn-cancel-edit { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
       .add-list-btn {
         background: #ffffff; border: 1px solid #dadce0; border-radius: 8px;
         padding: 8px 12px; font-size: clamp(14px, 2vh, 16px); font-weight: bold;
@@ -417,7 +439,7 @@
       }
       .add-modal-content {
         background: white; width: 95%; max-width: 600px; padding: 20px; border-radius: 12px;
-        display: flex; flex-direction: column; max-height: 85vh; box-sizing: border-box;
+        display: flex; flex-direction: column; max-height: 95vh; box-sizing: border-box;
       }
       .add-modal-header {
         display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
@@ -436,10 +458,10 @@
       
       /* 개별 카드 (너비 210px) */
       .add-card {
-        flex: 0 0 210px; display: flex; flex-direction: column; gap: 8px;
+        flex: 0 0 160px; display: flex; flex-direction: column; gap: 8px;
         background: #ffffff; border: 1px solid #cbd5e1; padding: 10px; border-radius: 12px; box-sizing: border-box;
       }
-      .photo-box-wrap { position: relative; width: 100%; height: 95px; }
+      .photo-box-wrap { position: relative; width: 100%; height: 150px; }
       .photo-box {
         width: 100%; height: 100%; border: 2px solid #334155; border-radius: 10px;
         display: flex; justify-content: center; align-items: center; background: #f8fafc;
@@ -488,7 +510,7 @@
       
       .card-data-row { display: flex; gap: 4px; align-items: center; width: 100%; }
       .row-hub-select {
-        width: 82px; padding: 4px 2px; font-size: 12px; font-weight: 600;
+        width: 72px; padding: 4px 2px; font-size: 12px; font-weight: 600;
         border: 1px solid #94a3b8; border-radius: 4px; outline: none; background: #fff;
       }
       .row-carnum-input {
@@ -671,6 +693,40 @@
             <span id="noPreviewText" style="color: #aaa; font-size: 14px;">섬네일을 클릭해 다운로드할 이미지를 선택하세요.</span>
           </div>
           <div id="thumbnailContainer" class="thumbnail-zone"></div>
+
+          <div class="veh-action-zone">
+            <!-- 기본 버튼 그룹 -->
+            <div class="veh-btn-group" id="vehBtnGroup">
+              <button type="button" class="btn-veh-action btn-veh-edit" onclick="enableVehicleEditMode(true)">✏️ 정보 수정</button>
+              <button type="button" class="btn-veh-action btn-veh-del" onclick="deleteSelectedVehicle()">🗑️ 차량 삭제</button>
+            </div>
+
+            <!-- 인라인 수정 폼 -->
+            <div class="veh-edit-form" id="vehEditForm">
+              <div class="veh-edit-row">
+                <div style="flex: 1;">
+                  <label>Wave</label>
+                  <select id="editFieldWave" style="width: 100%;">
+                    <option value="1W">1W</option>
+                    <option value="2W">2W</option>
+                  </select>
+                </div>
+                <div style="flex: 2;">
+                  <label>허브</label>
+                  <select id="editFieldHub" style="width: 100%;"></select>
+                </div>
+              </div>
+              <div>
+                <label>차량번호</label>
+                <input type="text" id="editFieldCarNum" placeholder="차량번호 전체 (예: 경기80바6311)" style="width: 100%; box-sizing: border-box;">
+              </div>
+              <div class="veh-edit-row" style="margin-top: 5px;">
+                <button type="button" class="btn-save-edit" style="flex: 1;" onclick="saveVehicleEdit()">저장</button>
+                <button type="button" class="btn-cancel-edit" style="flex: 1;" onclick="enableVehicleEditMode(false)">취소</button>
+              </div>
+            </div>
+          </div>
+          
         </div>
       </div>
 
@@ -798,6 +854,8 @@
       ];
       
       let cardIdCounter = 0;
+
+      let activeModalVehicle = null;
 
       window.onerror = function(msg, url, line) {
         var statusMsg = document.getElementById('status-msg');
@@ -1219,6 +1277,120 @@
         currentUploadCarArr = isArrival;
       
         openCameraModal();
+      }
+
+      const originalShowDetail = showDetail;
+      showDetail = function(element) {
+        const { carId, info } = element.dataset;
+        const parsedInfo = JSON.parse(decodeURIComponent(info));
+        
+        // 현재 선택된 차량의 고유 데이터 저장
+        activeModalVehicle = {
+          carId: carId,
+          wave: parsedInfo.wave || "2W",
+          hub: parsedInfo.hub || "",
+          carNumber: parsedInfo.carNumber || ""
+        };
+      
+        // 모달을 열 때 항상 수정 폼을 숨기고 기본 상태로 리셋
+        enableVehicleEditMode(false);
+      
+        // 기존 상세 보기 로직 실행
+        originalShowDetail(element);
+      };
+
+      function enableVehicleEditMode(isEdit) {
+        const btnGroup = document.getElementById('vehBtnGroup');
+        const editForm = document.getElementById('vehEditForm');
+        
+        if (!btnGroup || !editForm) return;
+      
+        if (isEdit) {
+          if (!activeModalVehicle) return;
+      
+          btnGroup.style.display = 'none';
+          editForm.style.display = 'flex';
+      
+          // 기존 데이터 채워넣기
+          document.getElementById('editFieldWave').value = activeModalVehicle.wave;
+          document.getElementById('editFieldCarNum').value = activeModalVehicle.carNumber;
+      
+          // 허브 드롭다운 옵션 바인딩
+          const hubSelect = document.getElementById('editFieldHub');
+          hubSelect.innerHTML = HUB_LIST.map(hub => {
+            const isSelected = (hub === activeModalVehicle.hub);
+            return `<option value="${hub}" ${isSelected ? 'selected' : ''}>${hub}</option>`;
+          }).join('');
+      
+        } else {
+          btnGroup.style.display = 'flex';
+          editForm.style.display = 'none';
+        }
+      }
+
+      function saveVehicleEdit() {
+        if (!activeModalVehicle) return;
+      
+        const newWave = document.getElementById('editFieldWave').value;
+        const newHub = document.getElementById('editFieldHub').value;
+        const newCarNum = document.getElementById('editFieldCarNum').value.trim();
+      
+        if (newHub === "직접선택" || newHub === "") {
+          return alert("허브를 올바르게 선택해 주세요.");
+        }
+      
+        const payload = {
+          carId: activeModalVehicle.carId,
+          wave: newWave,
+          hub: newHub,
+          carNumber: newCarNum
+        };
+      
+        fetch(`${CONFIG.WORKER_URL}?action=editVehicle&key=${APP_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === "success") {
+            alert("✅ 차량 정보가 수정되었습니다.");
+            closeModal();
+            // 앱시트 백그라운드 반영 대기 후 목록 새로고침
+            setTimeout(() => { if (typeof fetchData === "function") fetchData(); }, 2000);
+          } else {
+            alert("수정 실패: " + result.message);
+          }
+        })
+        .catch(err => alert("통신 에러 발생"));
+      }
+      
+      // 차량 삭제
+      function deleteSelectedVehicle() {
+        if (!activeModalVehicle) return;
+      
+        const confirmDel = confirm(
+          `🚨 정말 [${activeModalVehicle.hub} | ${activeModalVehicle.carNumber}] 차량을 삭제하시겠습니까?\n구글 시트에서도 완전히 삭제되며 복구할 수 없습니다.`
+        );
+        if (!confirmDel) return;
+      
+        fetch(`${CONFIG.WORKER_URL}?action=deleteVehicle&key=${APP_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ carId: activeModalVehicle.carId })
+        })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === "success") {
+            alert("🗑️ 차량이 성공적으로 삭제되었습니다.");
+            closeModal();
+            // 앱시트 백그라운드 반영 대기 후 목록 새로고침
+            setTimeout(() => { if (typeof fetchData === "function") fetchData(); }, 2000);
+          } else {
+            alert("삭제 실패: " + result.message);
+          }
+        })
+        .catch(err => alert("통신 에러 발생"));
       }
 
       function showDetail(element) {
@@ -2108,6 +2280,9 @@
             carSeq: seq,
             isArrival: isArrival,
             hubStr: hubStr,
+            hub: hub,
+            wave: wave,
+            carNumber: carNumber,
             carStatus: isArrival 
               ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? UTILS.getUnloadingStatus(ptNum, rtNum, 2) : ""} 하차 완료` : ""}` 
               : "미도착"
