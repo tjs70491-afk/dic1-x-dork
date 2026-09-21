@@ -851,7 +851,7 @@
         // 3. 사진이나 데이터가 1개라도 있다면 삭제 전 사용자 확인(되묻기)
         if (hasPhoto || hasData) {
           const confirmDelete = confirm(
-            "⚠️ 이 카드에 이미 분석된 사진이나 입력된 데이터가 있습니다.\n정말 이 카드를 삭제하시겠습니까?\n(AI 분석 비용이 소모된 상태입니다.)"
+            "⚠️ 이 카드에 이미 분석된 사진이나 입력된 데이터가 있습니다.\n정말 이 카드를 삭제하시겠습니까?"
           );
           if (!confirmDelete) return; // 취소 누르면 삭제 중단
         }
@@ -1001,26 +1001,44 @@
       // 최종 서버 전송
       function submitCardData() {
         const cards = document.querySelectorAll('.add-card');
-        const payload = [];
+        const cardPayloads = [];
       
         cards.forEach(card => {
+          const img = card.querySelector('.photo-img');
+          const hasPhoto = img && img.style.display === 'block';
+          let imageBase64 = null;
+          if (img && img.style.display === 'block' && img.src.includes('base64,')) {
+            imageBase64 = img.src.split('base64,')[1];
+          }
+          
           const wave = card.querySelector('.wave-select').value;
           const rows = card.querySelectorAll('.card-data-row');
-      
+          const imageId = (hasPhoto) ? UTILS.generateUniqueID() : "directly";
+
+          const vehicles = [];
           rows.forEach(row => {
             let hub = row.querySelector('.row-hub-select').value;
             const carNum = row.querySelector('.row-carnum-input').value.trim();
       
             if (hub === "직접선택") hub = "";
       
-            // 허브나 차량번호 둘 중 하나라도 적혀있다면 전송 대상에 포함
-            if (hub !== "" || carNum !== "") {
-              payload.push({ wave: wave, hub: hub, carNum: carNum });
+            // 허브가 적혀있다면 전송 대상에 포함
+            if (hub !== "") {
+              vehicles.push({ hub: hub, carNum: carNum });
             }
           });
+          
+          if (vehicles.length > 0) {
+            cardPayloads.push({
+              wave: wave,
+              imageId: imageId,
+              imageBase64: imageBase64, // 해당 카드의 사진
+              vehicles: vehicles
+            });
+          }
         });
       
-        if (payload.length === 0) return alert("추가할 차량 데이터가 없습니다.");
+        if (cardPayloads.length === 0) return alert("추가할 차량 데이터가 없습니다.");
       
         const btn = document.querySelector('.btn-submit');
         btn.innerText = "처리 중..."; btn.disabled = true;
@@ -1029,12 +1047,12 @@
         fetch(`${targetUrl}?action=addManualList&key=${APP_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ listData: payload })
+          body: JSON.stringify({ cardPayloads: cardPayloads })
         })
         .then(res => res.json())
         .then(result => {
           if (result.status === "success") {
-            alert("✅ 차량 등록 요청이 완료되었습니다.");
+            UTILS.showToast("✅ 차량 등록 요청이 완료되었습니다.");
             
             // 모달 즉시 닫기
             document.getElementById('cardContainer').innerHTML = '';
@@ -1153,7 +1171,7 @@
         .then(res => res.json())
         .then(result => {
           if (result.status === "success") {
-            alert("✅ 차량 정보가 수정되었습니다.");
+            UTILS.showToast("✅ 차량 정보가 수정되었습니다.");
             closeChecklistEditModal();
             // 앱시트 동기화 대기 후 목록 갱신
             setTimeout(() => { fetchData(false); }, 2000);
@@ -1186,7 +1204,7 @@
         .then(res => res.json())
         .then(result => {
           if (result.status === "success") {
-            alert("🗑️ 차량이 성공적으로 삭제되었습니다.");
+            UTILS.showToast("🗑️ 차량이 성공적으로 삭제되었습니다.");
             // 앱시트 동기화 대기 후 목록 갱신
             setTimeout(() => { fetchData(false); }, 2000);
           } else {
