@@ -367,6 +367,35 @@
       .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
       .photo-box span { font-size: 15px; font-weight: bold; color: #334155; pointer-events: none; }
       
+      /* AI 분석 로딩 오버레이 */
+      .photo-loading-overlay {
+        display: none;
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.7);
+        border-radius: 10px;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-size: 11px;
+        font-weight: bold;
+        z-index: 5;
+        gap: 4px;
+      }
+      .spinner-mini {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #ffffff;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spinCard 0.8s linear infinite;
+      }
+      @keyframes spinCard {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
       /* X 버튼 (label 밖에 위치하여 클릭 간섭 차단) */
       .btn-del-card {
         position: absolute;
@@ -426,6 +455,23 @@
         padding: 5px; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center;
       }
       .btn-add-row:hover { background: #e2e8f0; }
+
+      /* 카드 내부 임시 로딩 플레이스홀더 */
+      .loading-row-placeholder {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        color: #1a73e8;
+        font-size: 13px;
+        font-weight: bold;
+        text-align: center;
+        animation: pulseText 1.2s infinite;
+      }
+      @keyframes pulseText {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
       
       /* 추가 버튼 (카드 우측) */
       .btn-add-card {
@@ -588,7 +634,35 @@
         addNewCard(); // 기본 카드 1개 생성
       }
       
+      // 데이터 유실 방지 검사 함수
+      function hasEnteredData() {
+        const cards = document.querySelectorAll('.add-card');
+        for (let card of cards) {
+          // 1. 사진이 업로드되어 있는지 확인
+          const img = card.querySelector('.photo-img');
+          if (img && img.style.display === 'block') return true;
+      
+          // 2. 허브나 차량번호에 유효한 값이 들어가 있는지 확인
+          const rows = card.querySelectorAll('.card-data-row');
+          for (let row of rows) {
+            const hub = row.querySelector('.row-hub-select').value;
+            const carNum = row.querySelector('.row-carnum-input').value.trim();
+            if ((hub !== "직접선택" && hub !== "") || carNum !== "") {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      
+      // 닫기 시도 시 데이터/비용 확인 후 되묻기
       function closeCardModal() {
+        if (hasEnteredData()) {
+          const confirmClose = confirm(
+            "⚠️ 이미 분석되었거나 입력 중인 데이터가 있습니다.\n창을 닫으면 내용이 사라집니다. 정말 닫으시겠습니까?"
+          );
+          if (!confirmClose) return; // 사용자가 취소를 누르면 닫지 않음
+        }
         document.getElementById('addCardModal').style.display = 'none';
       }
       
@@ -604,25 +678,31 @@
         
         const cardHtml = `
           <div class="add-card" id="${cardId}">
-          
+            <!-- 1. 사진 영역 -->
             <div class="photo-box-wrap">
               <button type="button" class="btn-del-card" onclick="removeCard(event, '${cardId}')">X</button>
               <label class="photo-box" for="${fileInputId}">
                 <span class="photo-text">+ 사진</span>
                 <img class="photo-img" src="">
+                <!-- 🔴 AI 로딩 스피너 오버레이 -->
+                <div class="photo-loading-overlay" id="loading_${cardId}">
+                  <div class="spinner-mini"></div>
+                  <span>분석 중...</span>
+                </div>
               </label>
               <input type="file" id="${fileInputId}" accept="image/*" capture="environment" style="display: none;" onchange="handleCardCamera(event, '${cardId}')">
             </div>
             
+            <!-- 2. Wave 선택 -->
             <select class="wave-select">
               <option value="2W">2W</option>
               <option value="1W">1W</option>
             </select>
             
-            <div class="card-rows-container" id="rows_${cardId}">
-              <!-- 동적 행 추가 위치 -->
-            </div>
+            <!-- 3. 개별 차량 목록 행 컨테이너 -->
+            <div class="card-rows-container" id="rows_${cardId}"></div>
             
+            <!-- 4. 행 추가 버튼 -->
             <button type="button" class="btn-add-row" onclick="addCardRow('${cardId}')">+ 행 추가</button>
           </div>
         `;
@@ -631,10 +711,7 @@
         const addBtn = document.getElementById('btnAddCard');
         addBtn.insertAdjacentHTML('beforebegin', cardHtml);
         
-        // 기본 빈 행 1개 생성
-        addCardRow(cardId);
-      
-        // 스크롤 맨 우측 이동
+        addCardRow(cardId); // 빈 행 생성
         container.scrollLeft = container.scrollWidth;
       }
       
@@ -722,15 +799,18 @@
         const card = document.getElementById(cardId);
         const imgEl = card.querySelector('.photo-img');
         const textEl = card.querySelector('.photo-text');
+        const loadingOverlay = document.getElementById(`loading_${cardId}`);
         const rowsContainer = document.getElementById(`rows_${cardId}`);
       
-        textEl.innerText = "분석중⏳";
+        // 1. 로딩 UI 표시 (오버레이 ON + 행 영역 안내 문구)
+        loadingOverlay.style.display = 'flex';
+        rowsContainer.innerHTML = `<div class="loading-row-placeholder">AI 텍스트 추출 중...<br>잠시만 기다려주세요.</div>`;
       
         const reader = new FileReader();
         reader.onload = function(e) {
           const img = new Image();
           img.onload = function() {
-            // 이미지 클라이언트 사이드 압축
+            // 이미지 클라이언트 사이드 압축 (1000px, 70% 압축)
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const MAX_SIZE = 1000;
@@ -742,12 +822,13 @@
             
             const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
       
+            // 미리보기 세팅
             imgEl.src = compressedBase64;
             imgEl.style.display = 'block';
             textEl.style.display = 'none';
       
-            // 워커로 AI 분석 요청
-            const targetUrl = CONFIG.WORKER_URL;
+            // 2. 워커 AI 호출
+            const targetUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
             fetch(`${targetUrl}?action=extractOcrAI&key=${APP_KEY}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -755,21 +836,26 @@
             })
             .then(res => res.json())
             .then(result => {
+              rowsContainer.innerHTML = ''; // 플레이스홀더 제거
               if (result.status === "success" && result.data && result.data.length > 0) {
-                // 기존 행 초기화 후 AI 데이터로 재구성
-                rowsContainer.innerHTML = '';
                 result.data.forEach(item => {
                   if (item.지역 || item.차량번호) {
                     addCardRow(cardId, item.지역 || "", item.차량번호 || "");
                   }
                 });
               } else {
-                alert("AI 인식 실패: " + (result.message || "결과 없음"));
+                alert("AI 인식 실패: " + (result.message || "추출된 결과가 없습니다."));
+                addCardRow(cardId); // 실패 시 빈칸 1개 복원
               }
             })
-            .catch(err => alert("통신 에러 발생"))
+            .catch(err => {
+              rowsContainer.innerHTML = '';
+              alert("통신 오류 발생");
+              addCardRow(cardId);
+            })
             .finally(() => {
-              textEl.innerText = "+ 사진";
+              // 로딩 오버레이 OFF
+              loadingOverlay.style.display = 'none';
             });
           };
           img.src = e.target.result;
@@ -813,9 +899,16 @@
         .then(res => res.json())
         .then(result => {
           if (result.status === "success") {
-            alert("✅ 차량 목록이 성공적으로 추가되었습니다.");
-            closeCardModal();
-            if (typeof fetchData === "function") fetchData(false);
+            alert("✅ 차량 등록 요청이 완료되었습니다.");
+            
+            // 모달 즉시 닫기
+            document.getElementById('cardContainer').innerHTML = '';
+            document.getElementById('addCardModal').style.display = 'none';
+            
+            // 앱시트 백그라운드 쓰기 시간을 고려해 2.5초 뒤 조용히 목록 갱신
+            setTimeout(() => {
+              if (typeof fetchData === "function") fetchData(false);
+            }, 2500);
           } else {
             alert("추가 실패: " + result.message);
           }
