@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
   <head>
+    
     <base target="_top">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no interactive-widget=resizes-content">
+    
     <style>
+      
       /* 전체 기본 설정 */
       body { 
         font-family: Roboto, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -303,12 +306,87 @@
         transition: background 0.2s;
       }
       .close-btn:hover { background: #e8eaed; }
+
+      .add-modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.5); z-index: 9999; justify-content: center; align-items: center;
+      }
+      .add-modal-content {
+        background: white; width: 95%; max-width: 600px; padding: 20px; border-radius: 12px;
+        display: flex; flex-direction: column; max-height: 85vh;
+      }
+      .add-modal-header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+      }
+      .add-modal-header h2 { margin: 0; font-size: 24px; }
+      .add-modal-header .close-x { font-size: 24px; color: #aaa; cursor: pointer; border: none; background: none; font-weight: bold; }
+      
+      /* 가로 스크롤 영역 */
+      .card-scroll-container {
+        display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 15px; padding-bottom: 10px;
+        flex: 1; align-items: flex-start;
+      }
+      /* 스크롤바 디자인 */
+      .card-scroll-container::-webkit-scrollbar { height: 10px; }
+      .card-scroll-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 5px; }
+      .card-scroll-container::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 5px; }
+      
+      /* 개별 카드 */
+      .add-card {
+        flex: 0 0 130px; /* 카드 고정 너비 */
+        display: flex; flex-direction: column; gap: 8px;
+      }
+      .photo-box {
+        width: 130px; height: 100px; border: 2px solid #334155; border-radius: 12px;
+        position: relative; display: flex; justify-content: center; align-items: center;
+        background: #f8fafc; cursor: pointer; overflow: hidden;
+      }
+      .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+      .photo-box span { font-size: 18px; font-weight: bold; color: #334155; }
+      .btn-del-card {
+        position: absolute; top: 4px; right: 4px; width: 24px; height: 24px;
+        background: white; color: red; border: 1px solid #ccc; border-radius: 50%;
+        font-weight: bold; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center;
+      }
+      .wave-select {
+        width: 100%; padding: 6px; border: 2px solid #334155; border-radius: 8px;
+        font-size: 16px; font-weight: bold; text-align: center; outline: none;
+      }
+      .data-textarea {
+        width: 100%; height: 200px; border: 2px solid #334155; border-radius: 12px;
+        padding: 8px; font-size: 13px; resize: none; box-sizing: border-box; outline: none;
+        line-height: 1.5; white-space: pre-wrap;
+      }
+      
+      /* 추가 버튼 (카드 우측) */
+      .btn-add-card {
+        flex: 0 0 100px; height: 100px; border: 2px solid #334155; border-radius: 12px;
+        background: #cbd5e1; font-size: 40px; color: #0f172a; cursor: pointer;
+        display: flex; justify-content: center; align-items: center;
+      }
+      
+      /* 하단 버튼 */
+      .add-modal-footer {
+        display: flex; justify-content: center; gap: 15px; margin-top: 20px;
+      }
+      .add-modal-footer button {
+        flex: 1; padding: 12px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
+      }
+      .btn-submit { background: white; border: 2px solid #0f172a; color: #0f172a; }
+      .btn-submit:hover { background: #f8fafc; }
+      .btn-cancel { background: white; border: 2px solid #0f172a; color: #0f172a; }
+    
     </style>
+    
     <script src="config.js"></script>
+    
   </head>
   <body>
+    
     <div class="header-area">
+      
       <div class="title-wrap">
+        <button type="button" class="add-list-btn" onclick="openManualAddModal()">➕</button>
         <h1>🚚 2W 간선차량 목록</h1>
         <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
       </div>
@@ -385,6 +463,27 @@
       </div>
     </div>
 
+    <div id="addCardModal" class="add-modal-overlay" onclick="closeCardModalOnOutside(event)">
+      <div class="add-modal-content">
+        <div class="add-modal-header">
+          <h2>차량 추가</h2>
+          <button class="close-x" onclick="closeCardModal()">X</button>
+        </div>
+        
+        <!-- 가로 스크롤 영역 -->
+        <div class="card-scroll-container" id="cardContainer">
+          <!-- 카드가 자바스크립트로 이곳에 추가됩니다 -->
+          <div class="btn-add-card" id="btnAddCard" onclick="addNewCard()">+</div>
+        </div>
+    
+        <!-- 하단 버튼 -->
+        <div class="add-modal-footer">
+          <button type="button" class="btn-submit" onclick="submitCardData()">추가하기</button>
+          <button type="button" class="btn-cancel" onclick="closeCardModal()">취소</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       const APP_KEY = UTILS.getAuthKey();
       const USER_TYPE = UTILS.getUserType();
@@ -393,6 +492,7 @@
         window.location.replace("index.html");
       }
 
+      let cardIdCounter = 0;
 
       var pendingRequests = 0;
       window.syncInterval = null;
@@ -404,6 +504,177 @@
         }
       };
 
+      function openManualAddModal() {
+        document.getElementById('addCardModal').style.display = 'flex';
+        document.getElementById('cardContainer').innerHTML = `<div class="btn-add-card" id="btnAddCard" onclick="addNewCard()">+</div>`;
+        addNewCard(); // 기본 카드 1개 생성
+      }
+      
+      function closeCardModal() {
+        document.getElementById('addCardModal').style.display = 'none';
+      }
+      
+      function closeCardModalOnOutside(event) {
+        if (event.target.id === 'addCardModal') closeCardModal();
+      }
+      
+      // 새로운 카드 생성
+      function addNewCard() {
+        cardIdCounter++;
+        const cardId = `card_${cardIdCounter}`;
+        
+        const cardHtml = `
+          <div class="add-card" id="${cardId}">
+            <!-- 사진 영역 (클릭 시 파일 선택) -->
+            <label class="photo-box">
+              <span class="photo-text">사진</span>
+              <img class="photo-img" src="">
+              <button type="button" class="btn-del-card" onclick="removeCard(event, '${cardId}')">X</button>
+              <input type="file" accept="image/*" capture="environment" style="display: none;" onchange="handleCardCamera(event, '${cardId}')">
+            </label>
+            
+            <!-- Wave 선택 -->
+            <select class="wave-select">
+              <option value="1W">1W</option>
+              <option value="2W">2W</option>
+            </select>
+            
+            <!-- 텍스트 영역 (AI 결과 입력 또는 수동 붙여넣기) -->
+            <textarea class="data-textarea" placeholder="허브   차량번호&#13;&#10;..."></textarea>
+          </div>
+        `;
+      
+        const container = document.getElementById('cardContainer');
+        const addBtn = document.getElementById('btnAddCard');
+        
+        // '+' 버튼 바로 앞에 새 카드 삽입
+        addBtn.insertAdjacentHTML('beforebegin', cardHtml);
+        
+        // 스크롤을 맨 우측으로 이동
+        container.scrollLeft = container.scrollWidth;
+      }
+      
+      // 카드 삭제
+      function removeCard(event, cardId) {
+        event.preventDefault(); // 파일 선택창 뜨는 것 방지
+        event.stopPropagation();
+        document.getElementById(cardId).remove();
+      }
+      
+      // 사진 촬영 및 AI OCR 처리
+      function handleCardCamera(event, cardId) {
+        const file = event.target.files[0];
+        if (!file) return;
+      
+        const card = document.getElementById(cardId);
+        const imgEl = card.querySelector('.photo-img');
+        const textEl = card.querySelector('.photo-text');
+        const textarea = card.querySelector('.data-textarea');
+      
+        textEl.innerText = "⏳";
+        textarea.value = "AI 분석 중입니다...\n잠시만 기다려주세요.";
+      
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            // 이미지 리사이징 및 압축
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const MAX_SIZE = 2000;
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } } 
+            else { if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; } }
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(img, 0, 0, w, h);
+            
+            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+      
+            // 사진 미리보기 띄우기
+            imgEl.src = compressedBase64;
+            imgEl.style.display = 'block';
+            textEl.style.display = 'none';
+      
+            // Worker로 AI 처리 요청
+            fetch(`${CONFIG.WORKER_URL}?action=extractOcrAI&key=${APP_KEY}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ imageBase64: compressedBase64.split(',')[1] })
+            })
+            .then(res => res.json())
+            .then(result => {
+              if (result.status === "success" && result.data) {
+                // AI 결과를 텍스트 에어리어에 예쁘게 포맷팅 (허브[탭]차량번호)
+                const textResult = result.data
+                  .filter(item => item.지역 || item.차량번호)
+                  .map(item => `${item.지역 || ''}\t${item.차량번호 || ''}`)
+                  .join('\n');
+                
+                textarea.value = textResult;
+              } else {
+                textarea.value = "";
+                alert("AI 인식 실패: " + (result.message || "결과 없음"));
+              }
+            })
+            .catch(err => {
+              textarea.value = "";
+              alert("통신 오류 발생");
+            });
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+      
+      // 폼 최종 제출
+      function submitCardData() {
+        const cards = document.querySelectorAll('.add-card');
+        const payload = [];
+      
+        cards.forEach(card => {
+          const wave = card.querySelector('.wave-select').value;
+          const rawText = card.querySelector('.data-textarea').value;
+      
+          // 텍스트 영역의 글을 줄바꿈으로 나누고, 탭이나 띄어쓰기로 허브/차번호 분리
+          const lines = rawText.split('\n');
+          lines.forEach(line => {
+            // 탭(\t) 또는 다중 공백으로 분리
+            const parts = line.trim().split(/[\t ]+/); 
+            if (parts.length > 0 && parts[0] !== "") {
+              const hub = parts[0] || "";
+              const carNum = parts[1] || "";
+              // AI가 인식했든, 수동으로 입력했든 이 규칙으로 데이터화됨
+              payload.push({ wave: wave, hub: hub, carNum: carNum });
+            }
+          });
+        });
+      
+        if (payload.length === 0) return alert("추가할 데이터가 없습니다.");
+      
+        const btn = document.querySelector('.btn-submit');
+        btn.innerText = "처리 중..."; btn.disabled = true;
+      
+        fetch(`${CONFIG.WORKER_URL}?action=addManualList&key=${APP_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ listData: payload })
+        })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === "success") {
+            alert("✅ 차량 목록이 성공적으로 추가되었습니다.");
+            closeCardModal();
+            if (typeof fetchData === "function") fetchData(false); // 리스트 새로고침
+          } else {
+            alert("추가 실패: " + result.message);
+          }
+        })
+        .catch(err => alert("통신 에러 발생"))
+        .finally(() => {
+          btn.innerText = "추가하기"; btn.disabled = false;
+        });
+      }
+
       function openQrModal() {
         var modal = document.getElementById('qrModal');
         var qrInfo = document.getElementById('qrInfo');
@@ -412,43 +683,23 @@
 
         qrImage.style.display = 'none';
         qrErrDetail.style.display = 'none';
-        if (CONFIG.BACKEND === "WORKER") {
-          fetch(`${CONFIG.WORKER_URL}?action=generateGuestLink&key=${APP_KEY}`)
-            .then(response => response.json())
-            .then(result => {
-              if (result.status === "error") {
-                qrInfo.innerText = "❌ 인증 오류"
-                qrErrDetail.innerText = result.message;
-                qrErrDetail.style.display = 'block';
-                return;
-              }
-              qrImage.style.display = 'block';
-              qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(result.data);
-            })
-            .catch(error => {
-              qrInfo.innerText = "❌ 서버 에러"
-              qrErrDetail.innerText = error.message;
+        fetch(`${CONFIG.WORKER_URL}?action=generateGuestLink&key=${APP_KEY}`)
+          .then(response => response.json())
+          .then(result => {
+            if (result.status === "error") {
+              qrInfo.innerText = "❌ 인증 오류"
+              qrErrDetail.innerText = result.message;
               qrErrDetail.style.display = 'block';
-            });
-        } else {
-          fetch(`${CONFIG.GAS_URL}?action=generateGuestLink&key=${APP_KEY}`, { redirect: "follow" })
-            .then(response => response.json())
-            .then(result => {
-              if (result.status === "error") {
-                qrInfo.innerText = "❌ 인증 오류"
-                qrErrDetail.innerText = result.message;
-                qrErrDetail.style.display = 'block';
-                return;
-              }
-              qrImage.style.display = 'block';
-              qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(result.data);
-            })
-            .catch(error => {
-              qrInfo.innerText = "❌ 서버 에러"
-              qrErrDetail.innerText = error.message;
-              qrErrDetail.style.display = 'block';
-            });
-        }
+              return;
+            }
+            qrImage.style.display = 'block';
+            qrImage.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(result.data);
+          })
+          .catch(error => {
+            qrInfo.innerText = "❌ 서버 에러"
+            qrErrDetail.innerText = error.message;
+            qrErrDetail.style.display = 'block';
+          });
 
         modal.classList.add('active');
       }
@@ -585,13 +836,8 @@
         filterList();
         stopSyncInterval();
         pendingRequests++;
-        
-        // 후 적용
-        var targetUrl = (CONFIG.BACKEND === "WORKER") 
-          ? `${CONFIG.WORKER_URL}?action=toggleCheck&key=${APP_KEY}&cId=${cId}`
-          : `${CONFIG.GAS_URL}?action=toggleCheck&key=${APP_KEY}&cId=${cId}`;
       
-        fetch(targetUrl, { redirect: "follow" })
+        fetch(`${CONFIG.WORKER_URL}?action=toggleCheck&key=${APP_KEY}&cId=${cId}`, { redirect: "follow" })
           .then(function(res) { return res.json(); })
           .then(function(result) {
             btnElement.disabled = false;
@@ -667,35 +913,19 @@
           }
         }
 
-        if (CONFIG.BACKEND === "WORKER") {
-          fetch(`${CONFIG.WORKER_URL}?action=getChecklistData&key=${APP_KEY}`)
-            .then(response => response.json())
-            .then(result => {
-              if (result.status === "error") {
-                document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
-                return;
-              }
-              localStorage.setItem("CACHED_DATA", JSON.stringify(result.data));
-              updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
-            })
-            .catch(error => {
-              document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
-            });
-        } else {
-          fetch(`${CONFIG.GAS_URL}?action=getChecklistData&key=${APP_KEY}`, { redirect: "follow" })
-            .then(response => response.json())
-            .then(result => {
-              if (result.status === "error") {
-                document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
-                return;
-              }
-              localStorage.setItem("CACHED_DATA", JSON.stringify(result.data));
-              updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
-            })
-            .catch(error => {
-              document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
-            });
-        }
+        fetch(`${CONFIG.WORKER_URL}?action=getChecklistData&key=${APP_KEY}`)
+          .then(response => response.json())
+          .then(result => {
+            if (result.status === "error") {
+              document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
+              return;
+            }
+            localStorage.setItem("CACHED_DATA", JSON.stringify(result.data));
+            updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
+          })
+          .catch(error => {
+            document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
+          });
       }
 
       function updateUI(data) {
