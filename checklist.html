@@ -747,7 +747,7 @@
             textEl.style.display = 'none';
       
             // 워커로 AI 분석 요청
-            const targetUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
+            const targetUrl = CONFIG.WORKER_URL;
             fetch(`${targetUrl}?action=extractOcrAI&key=${APP_KEY}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -804,7 +804,7 @@
         const btn = document.querySelector('.btn-submit');
         btn.innerText = "처리 중..."; btn.disabled = true;
       
-        const targetUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
+        const targetUrl = CONFIG.WORKER_URL;
         fetch(`${targetUrl}?action=addManualList&key=${APP_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
