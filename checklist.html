@@ -270,6 +270,11 @@
         fill: #1a73e8;
       }
 
+      #addOpenBtn {
+        left: 0;
+        right: auto;
+      }
+
       /* 모달 팝업 */
       .modal-overlay {
         display: none;
@@ -522,9 +527,28 @@
       .btn-cancel { background: white; border: 2px solid #0f172a; color: #0f172a; }
 
       .item-actions {
-        gap: 5px;
+        display: flex;
+        align-items: center;
+        gap: 12px; /* 간격을 5px에서 12px로 넓혀 여유 있게 분리 */
+        flex-shrink: 0;
       }
 
+      /* 액션 버튼 기본 디자인 다듬기 */
+      .btn-item-action {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: transform 0.1s, background-color 0.2s;
+      }
+      .btn-item-action:active {
+        transform: scale(0.9);
+      }
       /* 체크리스트 전용 수정 모달 */
       .edit-form-group {
         display: flex;
@@ -1594,7 +1618,7 @@
           const qrBtn = document.getElementById('qrOpenBtn');
           if (qrBtn) qrBtn.style.display = 'none';
           const addBtn = document.getElementById('addOpenBtn');
-          if (addBtn) qrBtn.style.display = 'none';
+          if (addBtn) addBtn.style.display = 'none';
         }
         setTimeout(checkWorkTimeAndSync, 500);
       });
