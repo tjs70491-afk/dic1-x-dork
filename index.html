@@ -11,7 +11,7 @@
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const APP_KEY = urlParams.get('key');
-    const backEndUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
+    const backEndUrl = CONFIG.WORKER_URL;
 
     if (!APP_KEY) {
       document.body.innerHTML = "<h2>접근 불가: 보안 키가 없습니다.</h2>";
