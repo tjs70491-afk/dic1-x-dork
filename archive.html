@@ -479,6 +479,16 @@
       .add-card {
         flex: 0 0 120px; display: flex; flex-direction: column; gap: 8px;
         background: #ffffff; border: 1px solid #cbd5e1; padding: 10px; border-radius: 12px; box-sizing: border-box;
+        transition: all 0.4s ease-out; opacity: 1;
+      }
+      .add-card.is-deleting {
+        opacity: 0;
+        flex: 0 0 0px;       /* 가로 폭을 0으로 축소 */
+        width: 0px;          /* 하위 호환을 위해 width도 0으로 */
+        margin-right: 0px;   /* 여백까지 제거해야 옆 항목이 자연스럽게 당겨옴 */
+        padding-left: 0px;
+        padding-right: 0px;
+        overflow: hidden;    /* 내부 콘텐츠가 삐져나오지 않도록 숨김 */
       }
       .photo-box-wrap { position: relative; width: 100%; height: 150px; }
       .photo-box {
@@ -982,7 +992,19 @@
         addBtn.insertAdjacentHTML('beforebegin', cardHtml);
         
         addCardRow(cardId);
-        container.scrollLeft = container.scrollWidth;
+        setTimeout(() => {
+          container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+        }, 0);
+      }
+
+      function deleteItem(itemElement) {
+        // 1. 애니메이션 클래스 추가 (사라지는 연출 시작)
+        itemElement.classList.add('is-deleting');
+      
+        // 2. CSS Transition(0.4초)이 끝난 후 DOM에서 완전히 삭제
+        itemElement.addEventListener('transitionend', () => {
+          itemElement.remove();
+        });
       }
       
       function removeCard(event, cardId) {
@@ -1019,7 +1041,7 @@
         }
       
         // 데이터가 없거나, 확인을 누른 경우에만 최종 삭제
-        targetCard.remove();
+        deleteItem(targetCard);
       }
       
       function generateHubOptions(selectedHub = "") {
