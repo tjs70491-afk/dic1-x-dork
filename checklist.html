@@ -243,7 +243,7 @@
       }
 
       /* QR 버튼 스타일 */
-      .qr-open-btn {
+      .modal-open-btn {
         position: absolute;
         right: 0;
         top: 50%;
@@ -260,11 +260,11 @@
         transition: all 0.2s;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       }
-      .qr-open-btn:hover {
+      .modal-open-btn:hover {
         background: #e8f0fe;
         border-color: #1a73e8;
       }
-      .qr-open-btn svg {
+      .modal-open-btn svg {
         width: 24px;
         height: 24px;
         fill: #1a73e8;
@@ -521,6 +521,10 @@
       .btn-submit:hover { background: #f8fafc; }
       .btn-cancel { background: white; border: 2px solid #0f172a; color: #0f172a; }
 
+      .item-actions {
+        gap: 5px;
+      }
+
       /* 체크리스트 전용 수정 모달 */
       .edit-form-group {
         display: flex;
@@ -565,12 +569,12 @@
   <body>
     
     <div class="header-area">
-      <button type="button" class="add-list-btn" onclick="openManualAddModal()">➕</button>
+      <button type="button" id="addOpenBtn" class="modal-open-btn" onclick="openManualAddModal()">➕</button>
       <div class="title-wrap">
         <h1>🚚 2W 간선차량 목록</h1>
         <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
       </div>
-      <button type="button" id="qrOpenBtn" class="qr-open-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
+      <button type="button" id="qrOpenBtn" class="modal-open-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
         <svg viewBox="0 0 32 32">
           <path fill-rule="evenodd" d="M5 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm0 2h8v8H5V5z"/>
           <rect x="7" y="7" width="4" height="4" rx="1"/>
@@ -1567,7 +1571,7 @@
                 checkIcon +
               '</button>' +
               '<span class="car-info ' + (unl ? "text-unloaded" : "") + '">' + carInfo + '</span>' +
-              (!unl ? (
+              ((!unl && USER_TYPE !== "guest") ? (
                 '<div class="item-actions">' +
                   '<button type="button" class="btn-item-action btn-item-edit" title="수정" ' +
                     'data-cid="' + cId + '" data-wave="' + itemWave + '" data-hub="' + hub + '" data-carnum="' + carN + '" ' +
@@ -1589,6 +1593,8 @@
         if (USER_TYPE === "guest") {
           const qrBtn = document.getElementById('qrOpenBtn');
           if (qrBtn) qrBtn.style.display = 'none';
+          const addBtn = document.getElementById('addOpenBtn');
+          if (addBtn) qrBtn.style.display = 'none';
         }
         setTimeout(checkWorkTimeAndSync, 500);
       });
