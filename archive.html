@@ -627,7 +627,7 @@
     <script>
       const APP_KEY = UTILS.getAuthKey();
       const USER_TYPE = UTILS.getUserType();
-      const backEndUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
+      const backEndUrl = CONFIG.WORKER_URL;
       if (!APP_KEY) {
         alert("인증 정보가 없습니다. 다시 로그인해주세요.");
         window.location.replace("index.html");
@@ -801,10 +801,8 @@
         document.getElementById('thumbnailContainer').innerHTML = "<p class='loading'>이미지 불러오는 중...</p>";
         document.getElementById('detailModal').style.display = 'flex';
         
-        const targetUrl = (CONFIG.BACKEND === "WORKER")
-          ? `${CONFIG.WORKER_URL}?action=getDetails&key=${APP_KEY}&cId=${carId}`
-          : `${CONFIG.GAS_URL}?action=getImages&key=${APP_KEY}&carId=${carId}`;
-
+        const targetUrl = `${CONFIG.WORKER_URL}?action=getDetails&key=${APP_KEY}&cId=${carId}`
+        
         fetch(targetUrl, { redirect: "follow" })
           .then(res => res.json())
           .then(result => {
@@ -1504,41 +1502,22 @@
           } catch(e) {}
         }
 
-        if (CONFIG.BACKEND === "WORKER") {
-          fetch(`${CONFIG.WORKER_URL}?action=getDashboard&key=${APP_KEY}`)
-            .then(response => response.json())
-            .then(result => {
-              if (result.status === "error") {
-                statusMsg.innerText = "❌ 인증 오류: " + result.message;
-                return;
-              }
-              localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
-              updateUI(result.data);
-            })
-            .catch(error => {
-              statusMsg.innerText = "❌ 서버 에러: " + error.message;
-            })
-            .finally(() => {
-              if (refreshBtn) refreshBtn.classList.remove('spinning');
-            });
-        } else {
-          fetch(`${CONFIG.GAS_URL}?action=getDashboard&key=${APP_KEY}`, { redirect: "follow" })
-            .then(response => response.json())
-            .then(result => {
-              if (result.status === "error") {
-                statusMsg.innerText = "❌ 인증 오류: " + result.message;
-                return;
-              }
-              localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
-              updateUI(result.data);
-            })
-            .catch(error => {
-              statusMsg.innerText = "❌ 서버 에러: " + error.message;
-            })
-            .finally(() => {
-              if (refreshBtn) refreshBtn.classList.remove('spinning');
-            });
-        }
+        fetch(`${CONFIG.WORKER_URL}?action=getDashboard&key=${APP_KEY}`)
+          .then(response => response.json())
+          .then(result => {
+            if (result.status === "error") {
+              statusMsg.innerText = "❌ 인증 오류: " + result.message;
+              return;
+            }
+            localStorage.setItem("CACHED_DASHBOARD_DATA", JSON.stringify(result.data));
+            updateUI(result.data);
+          })
+          .catch(error => {
+            statusMsg.innerText = "❌ 서버 에러: " + error.message;
+          })
+          .finally(() => {
+            if (refreshBtn) refreshBtn.classList.remove('spinning');
+          });
       }
 
       function updateUI(sheetData) {
