@@ -1,9 +1,6 @@
 const CONFIG = {
-  // 1. 구글 앱스 스크립트 배포 URL
-  GAS_URL: "https://script.google.com/macros/s/AKfycbzwm7HPCCuLLip_Mxz2M338Ao8wYwQU8-u0ghuwhTYBXJJQEOST7VspZY6VCWq4DSAMRA/exec",
+  
   WORKER_URL: "https://dic1-x-dock.tjs70491.workers.dev/",
-
-  BACKEND: "WORKER",
 
   // 2. 허브 이름 치환 규칙
   HUB_MAP: {
@@ -123,5 +120,86 @@ const UTILS = {
     } else {
       return unloadingStatus.map(item => `${item.type} : ${item.num}개`).join(", ");
     }
+  },
+
+  showToast: function(message, duration = 2500) {
+    let toast = document.getElementById('globalToastMsg');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'globalToastMsg';
+      toast.style.cssText = `
+        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+        background: rgba(32, 33, 36, 0.9); color: #fff; padding: 12px 24px;
+        border-radius: 25px; font-size: 14px; font-weight: 500; z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25); pointer-events: none;
+        transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0;
+        white-space: nowrap;
+      `;
+      document.body.appendChild(toast);
+    }
+
+    toast.innerText = message;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+
+    if (this._toastTimer) clearTimeout(this._toastTimer);
+
+    this._toastTimer = setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(10px)';
+    }, duration);
+  },
+
+  calculateSummary: function(sheetData) {
+    const isNotBucheon = (hub) => !String(hub).includes("부천3");
+  
+    return sheetData.reduce((acc, item) => {
+      const { wave, hub, isUnloaded, type } = item;
+  
+      if (wave === "1W" && isNotBucheon(hub)) {
+        acc.max1WLength++;
+        if (isUnloaded) acc.unloaded1WLength++;
+        else {
+          if (/신선/.test(type)) acc.freshCount1W++;
+          if (/PB|복합/.test(type)) acc.pbCount1W++;
+          if (/SIOC|이형/.test(type)) acc.ectCount1W++;
+        }
+      }
+  
+      if (wave === "2W" && isNotBucheon(hub)) {
+        acc.max2WLength++;
+        if (isUnloaded) acc.unloaded2WLength++;
+        else {
+          if (/SIOC|복합|신선/.test(type)) acc.siocCount2W++;
+          if (/PB/.test(type)) acc.pbCount2W++;
+          if (/이형/.test(type)) acc.irrCount2W++;
+        }
+      }
+  
+      if (hub === "SF부천3") {
+        acc.maxPicosLength++;
+        if (isUnloaded) acc.unloadedPicosLength++;
+      }
+  
+      if (hub === "부천3") {
+        acc.maxClustersLength++;
+        if (isUnloaded) acc.unloadedClustersLength++;
+      }
+  
+      return acc;
+    }, {
+      max1WLength: 0, unloaded1WLength: 0, freshCount1W: 0, pbCount1W: 0, ectCount1W: 0,
+      max2WLength: 0, unloaded2WLength: 0, siocCount2W: 0, pbCount2W: 0, irrCount2W: 0,
+      maxPicosLength: 0, unloadedPicosLength: 0, maxClustersLength: 0, unloadedClustersLength: 0
+    });
+  },
+
+  getCurrentTimeStr: function() {
+    const now = new Date();
+    return [
+      String(now.getHours()).padStart(2, '0'),
+      String(now.getMinutes()).padStart(2, '0'),
+      String(now.getSeconds()).padStart(2, '0')
+    ].join(':');
   }
 };
