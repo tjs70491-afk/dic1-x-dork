@@ -1005,7 +1005,6 @@
       
         cards.forEach(card => {
           const img = card.querySelector('.photo-img');
-          const hasPhoto = img && img.style.display === 'block';
           let imageBase64 = null;
           if (img && img.style.display === 'block' && img.src.includes('base64,')) {
             imageBase64 = img.src.split('base64,')[1];
@@ -1013,7 +1012,7 @@
           
           const wave = card.querySelector('.wave-select').value;
           const rows = card.querySelectorAll('.card-data-row');
-          const imageId = (hasPhoto) ? UTILS.generateUniqueID() : "directly";
+          const imageId = UTILS.generateUniqueID();
 
           const vehicles = [];
           rows.forEach(row => {
