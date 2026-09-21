@@ -403,6 +403,124 @@
         align-items: flex-start;
       }
 
+      .add-list-btn {
+        background: #ffffff; border: 1px solid #dadce0; border-radius: 8px;
+        padding: 8px 12px; font-size: clamp(14px, 2vh, 16px); font-weight: bold;
+        color: #1a73e8; cursor: pointer; display: flex; align-items: center; gap: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-right: 15px;
+      }
+      .add-list-btn:hover { background: #e8f0fe; }
+      
+      .add-modal-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.5); z-index: 9999; justify-content: center; align-items: center;
+      }
+      .add-modal-content {
+        background: white; width: 95%; max-width: 600px; padding: 20px; border-radius: 12px;
+        display: flex; flex-direction: column; max-height: 85vh; box-sizing: border-box;
+      }
+      .add-modal-header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+      }
+      .add-modal-header h2 { margin: 0; font-size: 22px; color: #202124; }
+      .add-modal-header .close-x { font-size: 24px; color: #aaa; cursor: pointer; border: none; background: none; font-weight: bold; }
+      
+      /* 가로 스크롤 카드 영역 */
+      .card-scroll-container {
+        display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 12px; padding-bottom: 10px;
+        flex: 1; align-items: flex-start;
+      }
+      .card-scroll-container::-webkit-scrollbar { height: 8px; }
+      .card-scroll-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+      .card-scroll-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      
+      /* 개별 카드 (너비 210px) */
+      .add-card {
+        flex: 0 0 210px; display: flex; flex-direction: column; gap: 8px;
+        background: #ffffff; border: 1px solid #cbd5e1; padding: 10px; border-radius: 12px; box-sizing: border-box;
+      }
+      .photo-box-wrap { position: relative; width: 100%; height: 95px; }
+      .photo-box {
+        width: 100%; height: 100%; border: 2px solid #334155; border-radius: 10px;
+        display: flex; justify-content: center; align-items: center; background: #f8fafc;
+        cursor: pointer; overflow: hidden; box-sizing: border-box;
+      }
+      .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+      .photo-box span { font-size: 14px; font-weight: bold; color: #334155; pointer-events: none; }
+      
+      /* 사진 우측 상단 모서리 X 버튼 */
+      .btn-del-card {
+        position: absolute; top: -7px; right: -7px; width: 26px; height: 26px;
+        background: white; color: #dc2626; border: 2px solid #334155; border-radius: 50%;
+        font-weight: 900; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center;
+        z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      }
+      
+      /* AI 로딩 오버레이 */
+      .photo-loading-overlay {
+        display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.7); border-radius: 8px; flex-direction: column;
+        justify-content: center; align-items: center; color: white; font-size: 11px; font-weight: bold;
+        z-index: 5; gap: 4px;
+      }
+      .spinner-mini {
+        width: 18px; height: 18px; border: 2px solid #ffffff; border-top: 2px solid transparent;
+        border-radius: 50%; animation: spinCard 0.8s linear infinite;
+      }
+      @keyframes spinCard {
+        0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }
+      }
+      
+      .wave-select {
+        width: 100%; padding: 5px; border: 2px solid #334155; border-radius: 6px;
+        font-size: 14px; font-weight: bold; text-align: center; outline: none; box-sizing: border-box;
+      }
+      
+      /* 내부 데이터 행 영역 */
+      .card-rows-container {
+        width: 100%; height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+        border: 1px dashed #cbd5e1; border-radius: 8px; padding: 6px; box-sizing: border-box; background: #fafafa;
+      }
+      .loading-row-placeholder {
+        display: flex; justify-content: center; align-items: center; height: 100%;
+        color: #1a73e8; font-size: 12px; font-weight: bold; text-align: center;
+      }
+      
+      .card-data-row { display: flex; gap: 4px; align-items: center; width: 100%; }
+      .row-hub-select {
+        width: 82px; padding: 4px 2px; font-size: 12px; font-weight: 600;
+        border: 1px solid #94a3b8; border-radius: 4px; outline: none; background: #fff;
+      }
+      .row-carnum-input {
+        flex: 1; min-width: 0; padding: 4px 6px; font-size: 12px;
+        border: 1px solid #94a3b8; border-radius: 4px; outline: none;
+      }
+      .row-del-btn {
+        background: #f1f5f9; border: 1px solid #cbd5e1; color: #64748b; border-radius: 4px;
+        padding: 2px 5px; font-size: 11px; cursor: pointer; font-weight: bold;
+      }
+      .row-del-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+      
+      .btn-add-row {
+        background: #f8fafc; border: 1px dashed #64748b; color: #334155; border-radius: 6px;
+        padding: 5px; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center;
+      }
+      .btn-add-row:hover { background: #e2e8f0; }
+      
+      /* 카드 추가 우측 '+' 버튼 */
+      .btn-add-card {
+        flex: 0 0 90px; height: 95px; border: 2px solid #334155; border-radius: 10px;
+        background: #cbd5e1; font-size: 36px; color: #0f172a; cursor: pointer;
+        display: flex; justify-content: center; align-items: center; margin-top: 10px;
+      }
+      
+      .add-modal-footer { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+      .add-modal-footer button {
+        flex: 1; padding: 10px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+      }
+      .btn-submit { background: #1a73e8; border: none; color: white; }
+      .btn-cancel { background: white; border: 1px solid #dadce0; color: #3c4043; }
+
       @media (max-width: 768px) {
         body {
           height: auto;
@@ -453,7 +571,10 @@
   <body>
     
     <div class="header-area">
-      <h1>🚚 2W 간선 하차 현황</h1>
+      <div style="display: flex; align-items: center;">
+        <button type="button" class="add-list-btn" onclick="openManualAddModal()">➕</button>
+        <h1>🚚 2W 간선 하차 현황</h1>
+      </div>
       <div class="header-right">
         <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
         <button id="refreshBtn" class="refresh-btn" type="button" onclick="fetchData()" title="데이터 새로고침">🔄</button>
@@ -623,6 +744,26 @@
         </div>
       </div>
     </div>
+    
+    <div id="addCardModal" class="add-modal-overlay" onclick="closeCardModalOnOutside(event)">
+      <div class="add-modal-content">
+        <div class="add-modal-header">
+          <h2>차량 추가</h2>
+          <button class="close-x" onclick="closeCardModal()">&times;</button>
+        </div>
+        
+        <!-- 가로 스크롤 카드 영역 -->
+        <div class="card-scroll-container" id="cardContainer">
+          <div class="btn-add-card" id="btnAddCard" onclick="addNewCard()">+</div>
+        </div>
+
+        <!-- 하단 액션 버튼 -->
+        <div class="add-modal-footer">
+          <button type="button" class="btn-submit" onclick="submitCardData()">추가하기</button>
+          <button type="button" class="btn-cancel" onclick="closeCardModal()">취소</button>
+        </div>
+      </div>
+    </div>
 
     <script>
       const APP_KEY = UTILS.getAuthKey();
@@ -647,6 +788,16 @@
       let isCapturing = false;
 
       let silentSyncTimer = null;
+
+      const HUB_LIST = [
+        "직접선택", "클러스터", "SF부천3", "경기광주1", "고양1", "곤지암1", "동탄1", "마장1",
+        "목천1", "부천1", "부천2", "서울1", "시흥2", "안산2", "안성4", "안성5",
+        "안성8", "이천2", "이천3", "이천4", "인천4", "인천5", "인천11", "인천12",
+        "인천14", "인천14CFC", "인천15", "인천16", "인천22", "인천28", "인천30", "인천45",
+        "전라광주2", "창원1", "천안2", "천안6", "평택1"
+      ];
+      
+      let cardIdCounter = 0;
 
       window.onerror = function(msg, url, line) {
         var statusMsg = document.getElementById('status-msg');
@@ -680,6 +831,269 @@
           }
         }
       });
+
+      function openManualAddModal() {
+        document.getElementById('addCardModal').style.display = 'flex';
+        document.getElementById('cardContainer').innerHTML = `<div class="btn-add-card" id="btnAddCard" onclick="addNewCard()">+</div>`;
+        addNewCard(); 
+      }
+      
+      // 닫기 전 데이터/비용 유실 방지 되묻기
+      function hasEnteredData() {
+        const cards = document.querySelectorAll('.add-card');
+        for (let card of cards) {
+          const img = card.querySelector('.photo-img');
+          if (img && img.style.display === 'block') return true;
+      
+          const rows = card.querySelectorAll('.card-data-row');
+          for (let row of rows) {
+            const hub = row.querySelector('.row-hub-select').value;
+            const carNum = row.querySelector('.row-carnum-input').value.trim();
+            if ((hub !== "직접선택" && hub !== "") || carNum !== "") return true;
+          }
+        }
+        return false;
+      }
+      
+      function closeCardModal() {
+        if (hasEnteredData()) {
+          const confirmClose = confirm(
+            "⚠️ 분석되었거나 작성 중인 데이터가 있습니다.\n창을 닫으면 내용이 사라집니다. 정말 닫으시겠습니까?"
+          );
+          if (!confirmClose) return;
+        }
+        document.getElementById('addCardModal').style.display = 'none';
+      }
+      
+      function closeCardModalOnOutside(event) {
+        if (event.target.id === 'addCardModal') closeCardModal();
+      }
+      
+      // 새 카드 생성
+      function addNewCard() {
+        cardIdCounter++;
+        const cardId = `card_${cardIdCounter}`;
+        const fileInputId = `file_${cardIdCounter}`;
+        
+        const cardHtml = `
+          <div class="add-card" id="${cardId}">
+            <div class="photo-box-wrap">
+              <button type="button" class="btn-del-card" onclick="removeCard(event, '${cardId}')">X</button>
+              <label class="photo-box" for="${fileInputId}">
+                <span class="photo-text">+ 사진</span>
+                <img class="photo-img" src="">
+                <div class="photo-loading-overlay" id="loading_${cardId}">
+                  <div class="spinner-mini"></div>
+                  <span>분석 중...</span>
+                </div>
+              </label>
+              <input type="file" id="${fileInputId}" accept="image/*" capture="environment" style="display: none;" onchange="handleCardCamera(event, '${cardId}')">
+            </div>
+            
+            <select class="wave-select">
+              <option value="2W">2W</option>
+              <option value="1W">1W</option>
+            </select>
+            
+            <div class="card-rows-container" id="rows_${cardId}"></div>
+            <button type="button" class="btn-add-row" onclick="addCardRow('${cardId}')">+ 행 추가</button>
+          </div>
+        `;
+      
+        const container = document.getElementById('cardContainer');
+        const addBtn = document.getElementById('btnAddCard');
+        addBtn.insertAdjacentHTML('beforebegin', cardHtml);
+        
+        addCardRow(cardId);
+        container.scrollLeft = container.scrollWidth;
+      }
+      
+      function removeCard(event, cardId) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        const targetCard = document.getElementById(cardId);
+        if (targetCard) targetCard.remove();
+      }
+      
+      function generateHubOptions(selectedHub = "") {
+        let isMatched = false;
+        let optionsHtml = HUB_LIST.map(hub => {
+          const isSelected = (hub === selectedHub);
+          if (isSelected) isMatched = true;
+          return `<option value="${hub}" ${isSelected ? 'selected' : ''}>${hub}</option>`;
+        }).join('');
+      
+        if (selectedHub && !isMatched && selectedHub !== "직접선택") {
+          optionsHtml = `<option value="${selectedHub}" selected>${selectedHub}</option>` + optionsHtml;
+        }
+        return optionsHtml;
+      }
+      
+      function addCardRow(cardId, hub = "", carNum = "") {
+        const rowsContainer = document.getElementById(`rows_${cardId}`);
+        if (!rowsContainer) return;
+      
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'card-data-row';
+      
+        const pasteHandler = `onpaste="handleCardRowPaste(event, '${cardId}', this)"`;
+      
+        rowDiv.innerHTML = `
+          <select class="row-hub-select">
+            ${generateHubOptions(hub)}
+          </select>
+          <input type="text" class="row-carnum-input" placeholder="차량번호" value="${carNum}" ${pasteHandler}>
+          <button type="button" class="row-del-btn" onclick="this.parentElement.remove()">×</button>
+        `;
+      
+        rowsContainer.appendChild(rowDiv);
+        rowsContainer.scrollTop = rowsContainer.scrollHeight;
+      }
+      
+      function handleCardRowPaste(e, cardId, currentInput) {
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+        if (pasteData.includes('\t') || pasteData.includes('\n')) {
+          e.preventDefault();
+          const lines = pasteData.split('\n').filter(line => line.trim() !== '');
+          const currentRow = currentInput.closest('.card-data-row');
+          
+          lines.forEach((line, index) => {
+            const parts = line.trim().split(/[\t ]+/);
+            const hub = parts[0] || "";
+            const carNum = parts[1] || "";
+      
+            if (index === 0) {
+              const hubSelect = currentRow.querySelector('.row-hub-select');
+              hubSelect.innerHTML = generateHubOptions(hub);
+              currentRow.querySelector('.row-carnum-input').value = carNum;
+            } else {
+              addCardRow(cardId, hub, carNum);
+            }
+          });
+        }
+      }
+      
+      // 사진 촬영 및 AI OCR 파싱
+      function handleCardCamera(event, cardId) {
+        const file = event.target.files[0];
+        if (!file) return;
+      
+        const card = document.getElementById(cardId);
+        const imgEl = card.querySelector('.photo-img');
+        const textEl = card.querySelector('.photo-text');
+        const loadingOverlay = document.getElementById(`loading_${cardId}`);
+        const rowsContainer = document.getElementById(`rows_${cardId}`);
+      
+        loadingOverlay.style.display = 'flex';
+        rowsContainer.innerHTML = `<div class="loading-row-placeholder">AI 텍스트 추출 중...<br>잠시만 기다려주세요.</div>`;
+      
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const MAX_SIZE = 2000;
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } } 
+            else { if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; } }
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(img, 0, 0, w, h);
+            
+            const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+      
+            imgEl.src = compressedBase64;
+            imgEl.style.display = 'block';
+            textEl.style.display = 'none';
+      
+            // Worker extractOcrAI 호출
+            fetch(`${CONFIG.WORKER_URL}?action=extractOcrAI&key=${APP_KEY}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ imageBase64: compressedBase64.split(',')[1] })
+            })
+            .then(res => res.json())
+            .then(result => {
+              rowsContainer.innerHTML = '';
+              if (result.status === "success" && result.data && result.data.length > 0) {
+                result.data.forEach(item => {
+                  if (item.지역 || item.차량번호) {
+                    addCardRow(cardId, item.지역 || "", item.차량번호 || "");
+                  }
+                });
+              } else {
+                alert("AI 인식 실패: " + (result.message || "결과 없음"));
+                addCardRow(cardId);
+              }
+            })
+            .catch(err => {
+              rowsContainer.innerHTML = '';
+              alert("통신 오류가 발생했습니다.");
+              addCardRow(cardId);
+            })
+            .finally(() => {
+              loadingOverlay.style.display = 'none';
+            });
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+      
+      // 최종 데이터 등록 (0.2초 초고속 등록 및 백그라운드 싱크)
+      function submitCardData() {
+        const cards = document.querySelectorAll('.add-card');
+        const payload = [];
+      
+        cards.forEach(card => {
+          const wave = card.querySelector('.wave-select').value;
+          const rows = card.querySelectorAll('.card-data-row');
+      
+          rows.forEach(row => {
+            let hub = row.querySelector('.row-hub-select').value;
+            const carNum = row.querySelector('.row-carnum-input').value.trim();
+      
+            if (hub === "직접선택") hub = "";
+            if (hub !== "" || carNum !== "") {
+              payload.push({ wave: wave, hub: hub, carNum: carNum });
+            }
+          });
+        });
+      
+        if (payload.length === 0) return alert("추가할 차량 데이터가 없습니다.");
+      
+        const btn = document.querySelector('.btn-submit');
+        btn.innerText = "처리 중..."; btn.disabled = true;
+      
+        fetch(`${CONFIG.WORKER_URL}?action=addManualList&key=${APP_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ listData: payload })
+        })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === "success") {
+            alert("✅ 차량 등록 요청이 완료되었습니다.");
+            
+            // 즉시 닫기
+            document.getElementById('cardContainer').innerHTML = '';
+            document.getElementById('addCardModal').style.display = 'none';
+            
+            // 앱시트 백그라운드 저장 완료 시간을 고려해 2.5초 뒤 대시보드 갱신
+            setTimeout(() => {
+              if (typeof fetchData === "function") fetchData();
+            }, 2500);
+          } else {
+            alert("추가 실패: " + result.message);
+          }
+        })
+        .catch(err => alert("통신 에러 발생"))
+        .finally(() => {
+          btn.innerText = "추가하기"; btn.disabled = false;
+        });
+      }
 
       function applyQuickFilter(keyword) {
         const searchInput = document.getElementById('searchInput');
