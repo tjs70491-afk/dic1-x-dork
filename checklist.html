@@ -358,6 +358,19 @@
         border: 1px solid #cbd5e1;
         padding: 10px;
         border-radius: 14px;
+
+        transition: all 0.4s ease-out; 
+        opacity: 1;
+      }
+
+      .add-card.is-deleting {
+        opacity: 0;
+        flex: 0 0 0px;       /* 가로 폭을 0으로 축소 */
+        width: 0px;          /* 하위 호환을 위해 width도 0으로 */
+        margin-right: 0px;   /* 여백까지 제거해야 옆 항목이 자연스럽게 당겨옴 */
+        padding-left: 0px;
+        padding-right: 0px;
+        overflow: hidden;    /* 내부 콘텐츠가 삐져나오지 않도록 숨김 */
       }
       
       /* 사진 영역 래퍼 (X 버튼 분리용) */
@@ -795,7 +808,19 @@
         addBtn.insertAdjacentHTML('beforebegin', cardHtml);
         
         addCardRow(cardId); // 빈 행 생성
-        container.scrollLeft = container.scrollWidth;
+        setTimeout(() => {
+          container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+        }, 0);
+      }
+
+      function deleteItem(itemElement) {
+        // 1. 애니메이션 클래스 추가 (사라지는 연출 시작)
+        itemElement.classList.add('is-deleting');
+      
+        // 2. CSS Transition(0.4초)이 끝난 후 DOM에서 완전히 삭제
+        itemElement.addEventListener('transitionend', () => {
+          itemElement.remove();
+        });
       }
       
       // 카드 삭제
@@ -833,7 +858,7 @@
         }
       
         // 데이터가 없거나, 확인을 누른 경우에만 최종 삭제
-        targetCard.remove();
+        deleteItem(targetCard);
       }
       
       // 허브 드롭다운 옵션 HTML 생성기
