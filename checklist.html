@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no interactive-widget=resizes-content">
     
     <style>
+
+      html, body {
+        /* 1. 모바일에서 화면을 아래로 당겨 새로고침되는 것 방지 */
+        overscroll-behavior-y: none; 
+        /* 2. 빠른 연타 시 더블탭 확대 방지 */
+        touch-action: manipulation; 
+        /* 3. 텍스트/버튼 길게 눌렀을 때 파란색 선택 영역 방지 */
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      
+      /* 검색창, 인풋 박스는 텍스트 입력이 되어야 하므로 예외 처리 */
+      input, textarea {
+        -webkit-user-select: auto;
+        user-select: auto;
+      }
       
       /* 전체 기본 설정 */
       body { 
