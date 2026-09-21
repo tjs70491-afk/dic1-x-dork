@@ -333,15 +333,21 @@
       
       /* 개별 카드 */
       .add-card {
-        flex: 0 0 130px; /* 카드 고정 너비 */
-        display: flex; flex-direction: column; gap: 8px;
+        flex: 0 0 210px; /* 130px -> 210px로 확장 */
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        padding: 10px;
+        border-radius: 14px;
       }
       
       /* 사진 영역 래퍼 (X 버튼 분리용) */
       .photo-box-wrap {
         position: relative;
-        width: 130px;
-        height: 100px;
+        width: 100%;
+        height: 95px;
       }
       
       /* 실제 사진 클릭 영역 (label) */
@@ -349,7 +355,7 @@
         width: 100%;
         height: 100%;
         border: 2px solid #334155;
-        border-radius: 12px;
+        border-radius: 10px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -359,15 +365,15 @@
         box-sizing: border-box;
       }
       .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
-      .photo-box span { font-size: 16px; font-weight: bold; color: #334155; pointer-events: none; }
+      .photo-box span { font-size: 15px; font-weight: bold; color: #334155; pointer-events: none; }
       
       /* X 버튼 (label 밖에 위치하여 클릭 간섭 차단) */
       .btn-del-card {
         position: absolute;
-        top: -8px;
-        right: -8px;
-        width: 28px;
-        height: 28px;
+        top: -7px;
+        right: -7px;
+        width: 26px;
+        height: 26px;
         background: white;
         color: #dc2626;
         border: 2px solid #334155;
@@ -379,21 +385,47 @@
         justify-content: center;
         align-items: center;
         z-index: 10; /* 사진보다 위에 위치 */
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
       }
       .btn-del-card:active {
         transform: scale(0.9);
       }
       
       .wave-select {
-        width: 100%; padding: 6px; border: 2px solid #334155; border-radius: 8px;
-        font-size: 16px; font-weight: bold; text-align: center; outline: none;
+        width: 100%; padding: 5px; border: 2px solid #334155; border-radius: 6px;
+        font-size: 15px; font-weight: bold; text-align: center; outline: none;
       }
-      .data-textarea {
-        width: 100%; height: 200px; border: 2px solid #334155; border-radius: 12px;
-        padding: 8px; font-size: 13px; resize: none; box-sizing: border-box; outline: none;
-        line-height: 1.5; white-space: pre-wrap;
+      
+      /* 카드 내부의 동적 행 컨테이너 (세로 스크롤 가능) */
+      .card-rows-container {
+        width: 100%; height: 210px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+        padding-right: 3px; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 6px; box-sizing: border-box;
       }
+      
+      /* 개별 차량 입력 행 */
+      .card-data-row {
+        display: flex; gap: 4px; align-items: center; width: 100%;
+      }
+      .row-hub-select {
+        width: 82px; padding: 4px 2px; font-size: 12px; font-weight: 600;
+        border: 1px solid #94a3b8; border-radius: 4px; outline: none; background: #fff;
+      }
+      .row-carnum-input {
+        flex: 1; min-width: 0; padding: 4px 6px; font-size: 12px;
+        border: 1px solid #94a3b8; border-radius: 4px; outline: none;
+      }
+      .row-del-btn {
+        background: #f1f5f9; border: 1px solid #cbd5e1; color: #64748b; border-radius: 4px;
+        padding: 2px 5px; font-size: 11px; cursor: pointer; font-weight: bold;
+      }
+      .row-del-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+      
+      /* 행 추가 버튼 */
+      .btn-add-row {
+        background: #f8fafc; border: 1px dashed #64748b; color: #334155; border-radius: 6px;
+        padding: 5px; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center;
+      }
+      .btn-add-row:hover { background: #e2e8f0; }
       
       /* 추가 버튼 (카드 우측) */
       .btn-add-card {
@@ -528,6 +560,15 @@
         alert("인증 정보가 없습니다. 다시 로그인해주세요.");
         window.location.replace("index.html");
       }
+      
+      // 나중에 이 목록은 갖고 올 것
+      const HUB_LIST = [
+        "직접선택", "클러스터", "SF부천3", "경기광주1", "고양1", "곤지암1", "동탄1", "마장1",
+        "목천1", "부천1", "부천2", "서울1", "시흥2", "안산2", "안성4", "안성5",
+        "안성8", "이천2", "이천3", "이천4", "인천4", "인천5", "인천11", "인천12",
+        "인천14", "인천14CFC", "인천15", "인천16", "인천22", "인천28", "인천30", "인천45",
+        "전라광주2", "창원1", "천안2", "천안6", "평택1"
+      ];
 
       let cardIdCounter = 0;
 
@@ -555,64 +596,125 @@
         if (event.target.id === 'addCardModal') closeCardModal();
       }
       
-      // 새로운 카드 생성
+      // 새 카드 생성
       function addNewCard() {
         cardIdCounter++;
         const cardId = `card_${cardIdCounter}`;
-        const fileInputId = `file_${cardIdCounter}`; // input 고유 ID
+        const fileInputId = `file_${cardIdCounter}`;
         
         const cardHtml = `
           <div class="add-card" id="${cardId}">
-            
-            <!-- 1. 사진 박스 래퍼 (X 버튼을 label 밖으로 분리) -->
+          
             <div class="photo-box-wrap">
-              <!-- X 삭제 버튼 (label 밖) -->
               <button type="button" class="btn-del-card" onclick="removeCard(event, '${cardId}')">X</button>
-              
-              <!-- 사진 클릭 영역 (label) -->
               <label class="photo-box" for="${fileInputId}">
                 <span class="photo-text">+ 사진</span>
                 <img class="photo-img" src="">
               </label>
-              
-              <!-- 파일 인풋 -->
               <input type="file" id="${fileInputId}" accept="image/*" capture="environment" style="display: none;" onchange="handleCardCamera(event, '${cardId}')">
             </div>
             
-            <!-- 2. Wave 선택 -->
             <select class="wave-select">
               <option value="2W">2W</option>
               <option value="1W">1W</option>
             </select>
             
-            <!-- 3. 텍스트 영역 -->
-            <textarea class="data-textarea" placeholder="허브   차량번호&#13;&#10;..."></textarea>
+            <div class="card-rows-container" id="rows_${cardId}">
+              <!-- 동적 행 추가 위치 -->
+            </div>
+            
+            <button type="button" class="btn-add-row" onclick="addCardRow('${cardId}')">+ 행 추가</button>
           </div>
         `;
       
         const container = document.getElementById('cardContainer');
         const addBtn = document.getElementById('btnAddCard');
-        
-        // '+' 버튼 바로 앞에 새 카드 삽입
         addBtn.insertAdjacentHTML('beforebegin', cardHtml);
         
-        // 스크롤을 맨 우측으로 이동
+        // 기본 빈 행 1개 생성
+        addCardRow(cardId);
+      
+        // 스크롤 맨 우측 이동
         container.scrollLeft = container.scrollWidth;
       }
       
-      // 카드 삭제 함수 (이벤트 전파 완전 차단)
+      // 카드 삭제
       function removeCard(event, cardId) {
         if (event) {
           event.stopPropagation();
           event.preventDefault();
         }
         const targetCard = document.getElementById(cardId);
-        if (targetCard) {
-          targetCard.remove();
+        if (targetCard) targetCard.remove();
+      }
+      
+      // 허브 드롭다운 옵션 HTML 생성기
+      function generateHubOptions(selectedHub = "") {
+        let isMatched = false;
+        let optionsHtml = HUB_LIST.map(hub => {
+          const isSelected = (hub === selectedHub);
+          if (isSelected) isMatched = true;
+          return `<option value="${hub}" ${isSelected ? 'selected' : ''}>${hub}</option>`;
+        }).join('');
+      
+        // 만약 AI가 인식한 허브가 표준 목록에 없다면, 옵션 맨 위에 강제로 추가해 값 유실 방지
+        if (selectedHub && !isMatched && selectedHub !== "직접선택") {
+          optionsHtml = `<option value="${selectedHub}" selected>${selectedHub}</option>` + optionsHtml;
+        }
+        return optionsHtml;
+      }
+      
+      // 카드 내부에 [허브드롭다운 + 차량번호] 행 추가
+      function addCardRow(cardId, hub = "", carNum = "") {
+        const rowsContainer = document.getElementById(`rows_${cardId}`);
+        if (!rowsContainer) return;
+      
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'card-data-row';
+      
+        // 시트 복사-붙여넣기 감지 이벤트 (onpaste)
+        const pasteHandler = `onpaste="handleCardRowPaste(event, '${cardId}', this)"`;
+      
+        rowDiv.innerHTML = `
+          <select class="row-hub-select">
+            ${generateHubOptions(hub)}
+          </select>
+          <input type="text" class="row-carnum-input" placeholder="차량번호" value="${carNum}" ${pasteHandler}>
+          <button type="button" class="row-del-btn" onclick="this.parentElement.remove()">×</button>
+        `;
+      
+        rowsContainer.appendChild(rowDiv);
+        rowsContainer.scrollTop = rowsContainer.scrollHeight;
+      }
+      
+      // 엑셀/스프레드시트 데이터 붙여넣기 자동 파싱 처리
+      function handleCardRowPaste(e, cardId, currentInput) {
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+        if (pasteData.includes('\t') || pasteData.includes('\n')) {
+          e.preventDefault();
+          const lines = pasteData.split('\n').filter(line => line.trim() !== '');
+      
+          const currentRow = currentInput.closest('.card-data-row');
+          
+          lines.forEach((line, index) => {
+            const parts = line.trim().split(/[\t ]+/);
+            const hub = parts[0] || "";
+            const carNum = parts[1] || "";
+      
+            if (index === 0) {
+              // 첫 줄은 현재 입력창 행에 적용
+              const hubSelect = currentRow.querySelector('.row-hub-select');
+              hubSelect.innerHTML = generateHubOptions(hub);
+              currentRow.querySelector('.row-carnum-input').value = carNum;
+            } else {
+              // 두 번째 줄부터는 아래에 새 행 생성
+              addCardRow(cardId, hub, carNum);
+            }
+          });
         }
       }
       
-      // 사진 촬영 및 AI OCR 처리
+      // 사진 촬영 및 AI OCR 파싱
       function handleCardCamera(event, cardId) {
         const file = event.target.files[0];
         if (!file) return;
@@ -620,19 +722,18 @@
         const card = document.getElementById(cardId);
         const imgEl = card.querySelector('.photo-img');
         const textEl = card.querySelector('.photo-text');
-        const textarea = card.querySelector('.data-textarea');
+        const rowsContainer = document.getElementById(`rows_${cardId}`);
       
-        textEl.innerText = "⏳";
-        textarea.value = "AI 분석 중입니다...\n잠시만 기다려주세요.";
+        textEl.innerText = "분석중⏳";
       
         const reader = new FileReader();
         reader.onload = function(e) {
           const img = new Image();
           img.onload = function() {
-            // 이미지 리사이징 및 압축
+            // 이미지 클라이언트 사이드 압축
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            const MAX_SIZE = 2000;
+            const MAX_SIZE = 1000;
             let w = img.width, h = img.height;
             if (w > h) { if (w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } } 
             else { if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; } }
@@ -641,35 +742,34 @@
             
             const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
       
-            // 사진 미리보기 띄우기
             imgEl.src = compressedBase64;
             imgEl.style.display = 'block';
             textEl.style.display = 'none';
       
-            // Worker로 AI 처리 요청
-            fetch(`${CONFIG.WORKER_URL}?action=extractOcrAI&key=${APP_KEY}`, {
+            // 워커로 AI 분석 요청
+            const targetUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
+            fetch(`${targetUrl}?action=extractOcrAI&key=${APP_KEY}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ imageBase64: compressedBase64.split(',')[1] })
             })
             .then(res => res.json())
             .then(result => {
-              if (result.status === "success" && result.data) {
-                // AI 결과를 텍스트 에어리어에 예쁘게 포맷팅 (허브[탭]차량번호)
-                const textResult = result.data
-                  .filter(item => item.지역 || item.차량번호)
-                  .map(item => `${item.지역 || ''}\t${item.차량번호 || ''}`)
-                  .join('\n');
-                
-                textarea.value = textResult;
+              if (result.status === "success" && result.data && result.data.length > 0) {
+                // 기존 행 초기화 후 AI 데이터로 재구성
+                rowsContainer.innerHTML = '';
+                result.data.forEach(item => {
+                  if (item.지역 || item.차량번호) {
+                    addCardRow(cardId, item.지역 || "", item.차량번호 || "");
+                  }
+                });
               } else {
-                textarea.value = "";
                 alert("AI 인식 실패: " + (result.message || "결과 없음"));
               }
             })
-            .catch(err => {
-              textarea.value = "";
-              alert("통신 오류 발생");
+            .catch(err => alert("통신 에러 발생"))
+            .finally(() => {
+              textEl.innerText = "+ 사진";
             });
           };
           img.src = e.target.result;
@@ -677,35 +777,35 @@
         reader.readAsDataURL(file);
       }
       
-      // 폼 최종 제출
+      // 최종 서버 전송
       function submitCardData() {
         const cards = document.querySelectorAll('.add-card');
         const payload = [];
       
         cards.forEach(card => {
           const wave = card.querySelector('.wave-select').value;
-          const rawText = card.querySelector('.data-textarea').value;
+          const rows = card.querySelectorAll('.card-data-row');
       
-          // 텍스트 영역의 글을 줄바꿈으로 나누고, 탭이나 띄어쓰기로 허브/차번호 분리
-          const lines = rawText.split('\n');
-          lines.forEach(line => {
-            // 탭(\t) 또는 다중 공백으로 분리
-            const parts = line.trim().split(/[\t ]+/); 
-            if (parts.length > 0 && parts[0] !== "") {
-              const hub = parts[0] || "";
-              const carNum = parts[1] || "";
-              // AI가 인식했든, 수동으로 입력했든 이 규칙으로 데이터화됨
+          rows.forEach(row => {
+            let hub = row.querySelector('.row-hub-select').value;
+            const carNum = row.querySelector('.row-carnum-input').value.trim();
+      
+            if (hub === "직접선택") hub = "";
+      
+            // 허브나 차량번호 둘 중 하나라도 적혀있다면 전송 대상에 포함
+            if (hub !== "" || carNum !== "") {
               payload.push({ wave: wave, hub: hub, carNum: carNum });
             }
           });
         });
       
-        if (payload.length === 0) return alert("추가할 데이터가 없습니다.");
+        if (payload.length === 0) return alert("추가할 차량 데이터가 없습니다.");
       
         const btn = document.querySelector('.btn-submit');
         btn.innerText = "처리 중..."; btn.disabled = true;
       
-        fetch(`${CONFIG.WORKER_URL}?action=addManualList&key=${APP_KEY}`, {
+        const targetUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
+        fetch(`${targetUrl}?action=addManualList&key=${APP_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ listData: payload })
@@ -715,7 +815,7 @@
           if (result.status === "success") {
             alert("✅ 차량 목록이 성공적으로 추가되었습니다.");
             closeCardModal();
-            if (typeof fetchData === "function") fetchData(false); // 리스트 새로고침
+            if (typeof fetchData === "function") fetchData(false);
           } else {
             alert("추가 실패: " + result.message);
           }
