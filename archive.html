@@ -502,7 +502,7 @@
       
       /* 내부 데이터 행 영역 */
       .card-rows-container {
-        width: 100%; height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+        width: 100%; height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
         border: 1px dashed #cbd5e1; border-radius: 8px; padding: 6px; box-sizing: border-box; background: #fafafa;
       }
       .loading-row-placeholder {
@@ -510,13 +510,13 @@
         color: #1a73e8; font-size: 12px; font-weight: bold; text-align: center;
       }
       
-      .card-data-row { display: flex; gap: 4px; align-items: center; width: 100%; }
+      .card-data-row { display: flex; gap: 4px; align-items: center; justify-content: flex-start; width: 100%; }
       .row-hub-select {
         width: 72px; padding: 4px 2px; font-size: 12px; font-weight: 600;
         border: 1px solid #94a3b8; border-radius: 4px; outline: none; background: #fff;
       }
       .row-carnum-input {
-        flex: 1; min-width: 0; padding: 4px 6px; font-size: 12px;
+        flex: 1; max-width: 70px; min-width: 0; padding: 4px 6px; font-size: 12px;
         border: 1px solid #94a3b8; border-radius: 4px; outline: none;
       }
       .row-del-btn {
