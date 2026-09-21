@@ -828,7 +828,7 @@
             textEl.style.display = 'none';
       
             // 2. 워커 AI 호출
-            const targetUrl = (CONFIG.BACKEND === "WORKER") ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
+            const targetUrl = CONFIG.WORKER_URL;
             fetch(`${targetUrl}?action=extractOcrAI&key=${APP_KEY}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
