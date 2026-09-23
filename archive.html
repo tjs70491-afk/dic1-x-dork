@@ -1144,12 +1144,18 @@
             .then(res => res.json())
             .then(result => {
               rowsContainer.innerHTML = '';
-              if (result.status === "success" && result.data && result.data.length > 0) {
-                result.data.forEach(item => {
-                  if (item.지역 || item.차량번호) {
-                    addCardRow(cardId, item.지역 || "", item.차량번호 || "");
-                  }
-                });
+              if (result.status === "success") {
+                if (result.imageId) {
+                  card.dataset.imageId = result.imageId;
+                }
+            
+                if (result.data && result.data.length > 0) {
+                  result.data.forEach(item => {
+                    if (item.지역 || item.차량번호) {
+                      addCardRow(cardId, item.지역 || "", item.차량번호 || "");
+                    }
+                  });
+                }
               } else {
                 alert("AI 인식 실패: " + (result.message || "결과 없음"));
                 addCardRow(cardId);
@@ -1175,15 +1181,12 @@
         const cardPayloads = [];
       
         cards.forEach(card => {
-          const img = card.querySelector('.photo-img');
-          let imageBase64 = null;
-          if (img && img.style.display === 'block' && img.src.includes('base64,')) {
-            imageBase64 = img.src.split('base64,')[1];
-          }
+          const serverImageId = card.dataset.imageId;
+          const hasPhoto = Boolean(serverImageId);
+          const parentId = serverImageId || UTILS.generateUniqueID();
           
           const wave = card.querySelector('.wave-select').value;
           const rows = card.querySelectorAll('.card-data-row');
-          const imageId = UTILS.generateUniqueID();
 
           const vehicles = [];
           rows.forEach(row => {
@@ -1201,8 +1204,8 @@
           if (vehicles.length > 0) {
             cardPayloads.push({
               wave: wave,
-              imageId: imageId,
-              imageBase64: imageBase64, // 해당 카드의 사진
+              parentId: parentId,
+              hasPhoto: hasPhoto,
               vehicles: vehicles
             });
           }
@@ -1222,16 +1225,16 @@
         .then(res => res.json())
         .then(result => {
           if (result.status === "success") {
-            UTILS.showToast("✅ 차량 등록 요청이 완료되었습니다.");
+            UTILS.showToast(`✅ ${result.message}`);
             
             // 모달 즉시 닫기
             document.getElementById('cardContainer').innerHTML = '';
             document.getElementById('addCardModal').style.display = 'none';
             
-            // 앱시트 백그라운드 쓰기 시간을 고려해 2.5초 뒤 조용히 목록 갱신
+            // 0.5초 뒤 조용히 목록 갱신
             setTimeout(() => {
               if (typeof fetchData === "function") fetchData(false);
-            }, 2500);
+            }, 500);
           } else {
             alert("추가 실패: " + result.message);
           }
