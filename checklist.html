@@ -1082,15 +1082,11 @@
         .then(result => {
           if (result.status === "success") {
             UTILS.showToast(`✅ ${result.message}`);
-            
-            // 모달 즉시 닫기
+
+            fetchData(false);
+
             document.getElementById('cardContainer').innerHTML = '';
             document.getElementById('addCardModal').style.display = 'none';
-            
-            // 0.5초 뒤 조용히 목록 갱신
-            setTimeout(() => {
-              if (typeof fetchData === "function") fetchData(false);
-            }, 500);
           } else {
             alert("추가 실패: " + result.message);
           }
@@ -1190,8 +1186,16 @@
         }
       
         const payload = { carId, wave, hub, carNumber };
-        const targetUrl = CONFIG.WORKER_URL;
+
+        const submitBtn = document.querySelector('.btn-edit-submit');
+        const cancelBtn = document.querySelector('.btn-edit-cancel');
+        const originalText = submitBtn.innerText;
       
+        submitBtn.disabled = true;
+        cancelBtn.disabled = true;
+        submitBtn.innerText = "수정 중... ⏳";
+        
+        const targetUrl = CONFIG.WORKER_URL;
         fetch(`${targetUrl}?action=editVehicle&key=${APP_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1202,13 +1206,18 @@
           if (result.status === "success") {
             UTILS.showToast("✅ 차량 정보가 수정되었습니다.");
             closeChecklistEditModal();
-            // 앱시트 동기화 대기 후 목록 갱신
-            setTimeout(() => { fetchData(false); }, 2000);
+            fetchData(false);
           } else {
             alert("수정 실패: " + result.message);
           }
         })
         .catch(err => alert("통신 오류가 발생했습니다."));
+        .finally(() => {
+          // [로딩 해제]
+          submitBtn.disabled = false;
+          cancelBtn.disabled = false;
+          submitBtn.innerText = originalText;
+        });
       }
       
       // 3. 차량 삭제 요청 (확인창)
@@ -1222,9 +1231,13 @@
           `🚨 [${carInfo}] 차량을 삭제하시겠습니까?\n구글 시트에서도 완전히 삭제되며 복구할 수 없습니다.`
         );
         if (!confirmDel) return;
-      
+
+        const originalContent = btnElement.innerHTML;
+        btnElement.disabled = true;
+        btnElement.innerHTML = "⏳";
+        btnElement.style.cursor = "not-allowed";
+        
         const targetUrl = CONFIG.WORKER_URL;
-      
         fetch(`${targetUrl}?action=deleteVehicle&key=${APP_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1234,13 +1247,20 @@
         .then(result => {
           if (result.status === "success") {
             UTILS.showToast("🗑️ 차량이 성공적으로 삭제되었습니다.");
-            // 앱시트 동기화 대기 후 목록 갱신
-            setTimeout(() => { fetchData(false); }, 2000);
+            fetchData(false);
           } else {
             alert("삭제 실패: " + result.message);
+            btnElement.disabled = false;
+            btnElement.innerHTML = originalContent;
+            btnElement.style.cursor = "pointer";
           }
         })
-        .catch(err => alert("통신 오류가 발생했습니다."));
+        .catch(err => {
+          alert("통신 오류가 발생했습니다.");
+          btnElement.disabled = false;
+          btnElement.innerHTML = originalContent;
+          btnElement.style.cursor = "pointer";
+        });
       }
 
       function filterList() {
