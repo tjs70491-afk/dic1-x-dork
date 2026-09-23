@@ -1409,6 +1409,14 @@
           hub: newHub,
           carNumber: newCarNum
         };
+
+        const saveBtn = document.querySelector('.btn-save-edit');
+        const cancelBtn = document.querySelector('.btn-cancel-edit');
+        const originalText = saveBtn.innerText;
+        
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        saveBtn.innerText = "저장 중... ⏳";
       
         fetch(`${CONFIG.WORKER_URL}?action=editVehicle&key=${APP_KEY}`, {
           method: "POST",
@@ -1420,13 +1428,18 @@
           if (result.status === "success") {
             UTILS.showToast("✅ 차량 정보가 수정되었습니다.");
             closeModal();
-            // 앱시트 백그라운드 반영 대기 후 목록 새로고침
-            setTimeout(() => { if (typeof fetchData === "function") fetchData(); }, 2000);
+            fetchData();
           } else {
             alert("수정 실패: " + result.message);
           }
         })
-        .catch(err => alert("통신 에러 발생"));
+        .catch(err => alert("통신 에러 발생"))
+        .finally(() => {
+          // [로딩 해제]
+          saveBtn.disabled = false;
+          cancelBtn.disabled = false;
+          saveBtn.innerText = originalText;
+        });
       }
       
       // 차량 삭제
@@ -1437,6 +1450,14 @@
           `🚨 정말 [${activeModalVehicle.hub} | ${activeModalVehicle.carNumber}] 차량을 삭제하시겠습니까?\n구글 시트에서도 완전히 삭제되며 복구할 수 없습니다.`
         );
         if (!confirmDel) return;
+
+        const delBtn = document.querySelector('.btn-veh-del');
+        const editBtn = document.querySelector('.btn-veh-edit');
+        const originalText = delBtn.innerText;
+      
+        delBtn.disabled = true;
+        if (editBtn) editBtn.disabled = true;
+        delBtn.innerText = "삭제 중... ⏳";
       
         fetch(`${CONFIG.WORKER_URL}?action=deleteVehicle&key=${APP_KEY}`, {
           method: "POST",
@@ -1448,13 +1469,18 @@
           if (result.status === "success") {
             UTILS.showToast("🗑️ 차량이 성공적으로 삭제되었습니다.");
             closeModal();
-            // 앱시트 백그라운드 반영 대기 후 목록 새로고침
-            setTimeout(() => { if (typeof fetchData === "function") fetchData(); }, 2000);
+            fetchData();
           } else {
             alert("삭제 실패: " + result.message);
           }
         })
-        .catch(err => alert("통신 에러 발생"));
+        .catch(err => alert("통신 에러 발생"))
+        .finally(() => {
+          // [로딩 해제]
+          delBtn.disabled = false;
+          if (editBtn) editBtn.disabled = false;
+          delBtn.innerText = originalText;
+        });
       }
 
       function showDetail(element) {
