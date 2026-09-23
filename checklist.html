@@ -1211,7 +1211,7 @@
             alert("수정 실패: " + result.message);
           }
         })
-        .catch(err => alert("통신 오류가 발생했습니다."));
+        .catch(err => alert("통신 오류가 발생했습니다."))
         .finally(() => {
           // [로딩 해제]
           submitBtn.disabled = false;
