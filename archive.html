@@ -851,13 +851,9 @@
     </div>
 
     <script>
-      const APP_KEY = UTILS.getAuthKey();
+
       const USER_TYPE = UTILS.getUserType();
       const backEndUrl = CONFIG.WORKER_URL;
-      if (!APP_KEY) {
-        alert("인증 정보가 없습니다. 다시 로그인해주세요.");
-        window.location.replace("index.html");
-      }
 
       let currentUploadCarId = "";
       let currentUploadCarInfo = "";
@@ -1136,7 +1132,7 @@
             textEl.style.display = 'none';
       
             // Worker extractOcrAI 호출
-            fetch(`${CONFIG.WORKER_URL}?action=extractOcrAI&key=${APP_KEY}`, {
+            UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=extractOcrAI`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ imageBase64: compressedBase64.split(',')[1] })
@@ -1217,7 +1213,7 @@
         btn.innerText = "처리 중..."; btn.disabled = true;
       
         const targetUrl = CONFIG.WORKER_URL;
-        fetch(`${targetUrl}?action=addManualList&key=${APP_KEY}`, {
+        UTILS.apiFetch(`${targetUrl}?action=addManualList`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ cardPayloads: cardPayloads })
@@ -1418,7 +1414,7 @@
         cancelBtn.disabled = true;
         saveBtn.innerText = "저장 중... ⏳";
       
-        fetch(`${CONFIG.WORKER_URL}?action=editVehicle&key=${APP_KEY}`, {
+        UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=editVehicle`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -1459,7 +1455,7 @@
         if (editBtn) editBtn.disabled = true;
         delBtn.innerText = "삭제 중... ⏳";
       
-        fetch(`${CONFIG.WORKER_URL}?action=deleteVehicle&key=${APP_KEY}`, {
+        UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=deleteVehicle`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ carId: activeModalVehicle.carId })
@@ -1505,9 +1501,9 @@
         document.getElementById('thumbnailContainer').innerHTML = "<p class='loading'>이미지 불러오는 중...</p>";
         document.getElementById('detailModal').style.display = 'flex';
         
-        const targetUrl = `${CONFIG.WORKER_URL}?action=getDetails&key=${APP_KEY}&cId=${carId}`
+        const targetUrl = `${CONFIG.WORKER_URL}?action=getDetails&cId=${carId}`
         
-        fetch(targetUrl, { redirect: "follow" })
+        UTILS.apiFetch(targetUrl, { redirect: "follow" })
           .then(res => res.json())
           .then(result => {
             if (result.status === "error") {
@@ -1543,6 +1539,26 @@
         return;
       }
 
+      async function loadImage(carId, imgElement) {
+        try {
+          // UTILS.apiFetch가 쿠키 또는 Authorization 헤더를 알아서 달고 요청함
+          const response = await UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}`);
+          if (!response.ok) throw new Error("이미지 로드 실패");
+      
+          // 바이너리 Blob 데이터로 변환 후 브라우저 가상 URL 생성
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+          
+          imgElement.src = objectUrl;
+          imgElement.style.display = 'block';
+      
+          // (선택) 메모리 누수 방지를 위해 이미지 로드 완료 후 URL 해제 가능
+          // imgElement.onload = () => URL.revokeObjectURL(objectUrl);
+        } catch (err) {
+          console.error("이미지 로딩 에러:", err);
+        }
+      }
+
       function fillModalData(imagesData, hubStr) {
         const mainImg = document.getElementById('mainImage');
         const noPreviewText = document.getElementById('noPreviewText');
@@ -1562,12 +1578,11 @@
         thumbContainer.style.display = 'flex';
         noPreviewText.style.display = 'none';
 
-        const getImageUrl = (carId) => `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}&key=${APP_KEY}`;
+        // const getImageUrl = (carId) => `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}&key=${APP_KEY}`;
 
         const firstImage = imagesData[0];
-        mainImg.decoding = "async";
-        mainImg.src = getImageUrl(firstImage.carId);
-        mainImg.style.display = 'block';
+        mainImg.style.display = 'none'; // 로딩 전 숨김
+        loadSecureImage(firstImage.carId, mainImg); // 안전한 로드 호출
         mainImg.onclick = function() { downloadImageR2(firstImage.carId, hubStr); };
 
         imagesData.forEach((item, index) => {
@@ -1576,11 +1591,9 @@
           if (index === 0) wrapper.classList.add('active');
       
           const img = document.createElement('img');
-          img.decoding = "async";
-          img.loading = "lazy";
-          img.src = getImageUrl(item.carId); // 브라우저가 비동기로 R2에서 다운로드
           img.className = 'thumb-img';
           wrapper.appendChild(img);
+          loadSecureImage(item.carId, img);
       
           wrapper.onclick = function() {
             document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
@@ -1596,9 +1609,9 @@
       async function downloadImageR2(carId, hubStr) {
         try {
           // 1. 워커에 이미지 요청 (인증키 포함)
-          const imageUrl = `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}&key=${APP_KEY}`;
+          const imageUrl = `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}`;
           
-          const response = await fetch(imageUrl);
+          const response = await UTILS.apiFetch(imageUrl);
           if (!response.ok) throw new Error("이미지를 불러올 수 없습니다.");
       
           // 2. 응답을 Blob(바이너리)으로 변환
@@ -2062,7 +2075,7 @@
           formData.append("isArrival", currentUploadCarArr);
           formData.append("imageFile", imageBlob, `${carId}_${Date.now()}.jpg`); // 파일 첨부
       
-          const response = await fetch(`${CONFIG.WORKER_URL}?action=uploadR2Image&key=${APP_KEY}`, {
+          const response = await UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=uploadR2Image`, {
             method: "POST",
             body: formData
           });
@@ -2140,7 +2153,7 @@
       
       // 스피너나 UI 방해 없이 조용히 서버 데이터를 덮어쓰는 함수
       function fetchSilentData() {
-        fetch(`${CONFIG.WORKER_URL}?action=getDashboard&key=${APP_KEY}`)
+        UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=getDashboard`)
           .then(res => res.json())
           .then(result => {
             if (result.status === "success") {
@@ -2183,7 +2196,7 @@
           } catch(e) {}
         }
 
-        fetch(`${CONFIG.WORKER_URL}?action=getDashboard&key=${APP_KEY}`)
+        UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=getDashboard`)
           .then(response => response.json())
           .then(result => {
             if (result.status === "error") {
