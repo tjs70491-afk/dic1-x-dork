@@ -285,12 +285,7 @@
     </div>
 
     <script>
-      const APP_KEY = UTILS.getAuthKey();
       const USER_TYPE = UTILS.getUserType();
-      if (!APP_KEY) {
-        alert("인증 정보가 없습니다. 다시 로그인해주세요.");
-        window.location.replace("index.html");
-      }
 
       let wakeLock = null;
       window.syncInterval = null;
@@ -376,7 +371,7 @@
       function fetchData() {
         document.getElementById('status-msg').innerText = "데이터 동기화 중...";
 
-        fetch(`${CONFIG.WORKER_URL}?action=getDashboard&key=${APP_KEY}`)
+        UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=getDashboard`)
           .then(response => response.json())
           .then(result => {
             if (result.status === "error") {
