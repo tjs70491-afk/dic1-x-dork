@@ -107,11 +107,6 @@ const UTILS = {
     document.cookie = `APP_KEY=${key}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
   },
 
-  // 사용자 권한 로드
-  getUserType: function() {
-    return localStorage.getItem("USER_TYPE") || "guest";
-  },
-
   // 허브 이름 포맷 변환 (부천3 -> 클러스터 등)
   getHubDisplayName: function(hub) {
     return CONFIG.HUB_MAP[hub] || hub;
