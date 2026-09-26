@@ -34,6 +34,26 @@ const CONFIG = {
 
 // 7. 모든 페이지에서 공통으로 쓰는 유틸리티 헬퍼
 const UTILS = {
+  // 1. 공통 fetch 래퍼: credentials를 강제하고 401(만료) 시 자동 튕겨내기
+  apiFetch: async function(url, options = {}) {
+    options.credentials = 'include'; // 쿠키 자동 동봉
+    
+    const response = await fetch(url, options);
+
+    // 세션 만료 시 처리
+    if (response.status === 401) {
+      alert("로그인 세션이 만료되었습니다. 다시 접속해주세요.");
+      localStorage.removeItem("USER_TYPE");
+      window.location.replace("index.html");
+      throw new Error("UNAUTHORIZED");
+    }
+    return response;
+  },
+
+  getUserType: function() {
+    return localStorage.getItem("USER_TYPE") || "guest";
+  },
+  
   getParamFromUrl: function(name) {
     const url = window.location.href;
     const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
