@@ -1582,7 +1582,7 @@
 
         const firstImage = imagesData[0];
         mainImg.style.display = 'none'; // 로딩 전 숨김
-        loadSecureImage(firstImage.carId, mainImg); // 안전한 로드 호출
+        loadImage(firstImage.carId, mainImg); // 안전한 로드 호출
         mainImg.onclick = function() { downloadImageR2(firstImage.carId, hubStr); };
 
         imagesData.forEach((item, index) => {
@@ -1593,7 +1593,7 @@
           const img = document.createElement('img');
           img.className = 'thumb-img';
           wrapper.appendChild(img);
-          loadSecureImage(item.carId, img);
+          loadImage(item.carId, img);
       
           wrapper.onclick = function() {
             document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
