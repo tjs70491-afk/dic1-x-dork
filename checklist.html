@@ -585,6 +585,133 @@
         border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer;
       }
 
+      body.high-contrast {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+      }
+      
+/* ============================================================
+[번인 방지 / 고대비 모드] High-Contrast Dark Mode
+============================================================ */
+      /* 카드 배경 완전 블랙 및 뚜렷한 흰색/회색 테두리 */
+      body.high-contrast .card {
+        background-color: #0a0a0a !important;
+        border: 1px solid #444444 !important;
+        box-shadow: none !important;
+      }
+      
+      body.high-contrast h1, 
+      body.high-contrast h2, 
+      body.high-contrast h3 {
+        color: #ffffff !important;
+      }
+      
+      body.high-contrast .status-text {
+        background: #222222 !important;
+        color: #00e676 !important; /* 형광 그린으로 시인성 확보 */
+        border: 1px solid #444444;
+      }
+      
+      /* 상단 잔여 카운터 */
+      body.high-contrast .remainItem {
+        background: #1e1e1e !important;
+        border: 1px solid #555 !important;
+      }
+      body.high-contrast .remainItem h2 { color: #aaaaaa !important; }
+      body.high-contrast .remainItem span { color: #ffeb3b !important; } /* 선명한 노란색 */
+      
+      body.high-contrast .cluster-item, 
+      body.high-contrast .pico-item {
+        background: #141414 !important;
+        border: 1px solid #444 !important;
+      }
+      body.high-contrast #pico-list, 
+      body.high-contrast #cluster-list {
+        color: #00e5ff !important; /* 선명한 하늘색 */
+      }
+      
+      /* 검색창 */
+      body.high-contrast #searchInput {
+        background-color: #111111 !important;
+        color: #ffffff !important;
+        border: 2px solid #ffffff !important;
+      }
+      
+      /* 리스트 아이템: 분홍 액정에서도 확실히 구분되는 진한 단색 대비 */
+      body.high-contrast .list-item {
+        background-color: #161616 !important;
+        border: 1px solid #333333 !important;
+      }
+      body.high-contrast .list-item:hover {
+        background-color: #222222 !important;
+      }
+      
+      /* 미도착 차량 */
+      body.high-contrast .list-item.not-arrived .car-info {
+        color: #ffffff !important;
+        font-weight: bold !important;
+      }
+      
+      /* 대기중 차량 (번인 화면에서 가장 잘 보이는 앰버/골드) */
+      body.high-contrast .list-item.waiting {
+        background-color: #2a2000 !important; /* 어두운 황토색 배경 */
+        border: 1px solid #ffd600 !important; /* 쨍한 노란 테두리 */
+      }
+      body.high-contrast .list-item.waiting .car-info {
+        color: #ffff00 !important; /* 순수 노란색 */
+      }
+      
+      /* 하차 완료 차량 */
+      body.high-contrast .list-item.unloaded {
+        background-color: #0d1a0d !important;
+        border: 1px solid #1b5e20 !important;
+      }
+      body.high-contrast .list-item.unloaded .car-info {
+        color: #777777 !important;
+        text-decoration: line-through;
+      }
+      
+      /* 체크박스 SVG 아이콘 고대비 색상 */
+      body.high-contrast .checkBox svg path,
+      body.high-contrast .checkBox svg rect {
+        stroke-width: 3.5px !important;
+      }
+      
+      /* 상단 버튼 스타일 */
+      .theme-toggle-btn {
+        position: absolute;
+        left: 50px; /* 기존 ➕ 추가 버튼 옆에 배치 */
+        top: 50%;
+        transform: translateY(-50%);
+        background: white;
+        border: 1px solid #cce0ff;
+        border-radius: 8px;
+        padding: 6px 10px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        user-select: none;
+      }
+      body.high-contrast .theme-toggle-btn {
+        background: #222222 !important;
+        border-color: #ffeb3b !important;
+        color: #ffeb3b !important;
+      }
+      body.high-contrast .modal-open-btn {
+        background: #222222 !important;
+        border-color: #555555 !important;
+      }
+      body.high-contrast .modal-open-btn svg {
+        fill: #ffffff !important;
+      }
+      
+/* ============================================================
+모바일 글자 최우선 모드
+============================================================ */
       @media (max-width: 600px) {
         body { 
           padding: 12px 3px; /* 모바일 전체 좌우 여백 축소 */
@@ -618,6 +745,7 @@
     
     <div class="header-area">
       <button type="button" id="addOpenBtn" class="modal-open-btn" onclick="openManualAddModal()">➕</button>
+      <button type="button" id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleHighContrastMode()" title="고대비/번인방지 모드">🌓</button>
       <div class="title-wrap">
         <h1>🚚 2W 간선차량 목록</h1>
         <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
@@ -769,6 +897,41 @@
           statusMsg.innerHTML = "<strong style='color:red;'>에러: " + msg + " (" + line + "줄)</strong>";
         }
       };
+
+      function toggleHighContrastMode() {
+        const isContrast = document.body.classList.toggle('high-contrast');
+        const btn = document.getElementById('themeToggleBtn');
+        
+        if (isContrast) {
+          localStorage.setItem("THEME_MODE", "high-contrast");
+          btn.innerHTML = "☀️";
+        } else {
+          localStorage.setItem("THEME_MODE", "default");
+          btn.innerHTML = "🌓";
+        }
+      }
+
+      (function initTheme() {
+        const savedTheme = localStorage.getItem("THEME_MODE");
+        
+        if (savedTheme === "high-contrast") {
+          // 1. body 클래스는 즉시 추가 (화면 깜빡임 방지)
+          document.body.classList.add('high-contrast');
+      
+          // 2. 버튼 텍스트를 변경하는 함수
+          const updateButtonText = () => {
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) btn.innerHTML = "☀️";
+          };
+      
+          // 3. 이미 DOM이 로드되었다면 즉시 실행, 아니라면 이벤트 리스너 등록
+          if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', updateButtonText);
+          } else {
+            updateButtonText();
+          }
+        }
+      })();
 
       function openManualAddModal() {
         document.getElementById('addCardModal').style.display = 'flex';
