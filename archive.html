@@ -264,6 +264,10 @@
         flex: 1; 
         text-align: left; 
       }
+      .car-info.changed {
+        color: #e65100 !important; /* 진한 주황색 */
+        font-style: italic !important;
+      }
       
       .badge { 
         flex-basis: 10%;
@@ -748,6 +752,16 @@
               <div>
                 <label>차량번호</label>
                 <input type="text" id="editFieldCarNum" placeholder="차량번호 전체 (예: 경기80바6311)" style="width: 100%; box-sizing: border-box;">
+              </div>
+              <div class="veh-edit-row" id="editCountsRow" style="display: none; margin-top: 4px;">
+                <div style="flex: 1;">
+                  <label>PT 수량</label>
+                  <input type="number" id="editFieldPt" min="0" style="width: 100%; box-sizing: border-box;">
+                </div>
+                <div style="flex: 1;">
+                  <label>RT 수량</label>
+                  <input type="number" id="editFieldRt" min="0" style="width: 100%; box-sizing: border-box;">
+                </div>
               </div>
               <div class="veh-edit-row" style="margin-top: 5px;">
                 <button type="button" class="btn-save-edit" style="flex: 1;" onclick="saveVehicleEdit()">저장</button>
@@ -1349,7 +1363,10 @@
           carId: carId,
           wave: parsedInfo.wave || "2W",
           hub: parsedInfo.hub || "",
-          carNumber: parsedInfo.carNumber || ""
+          carNumber: parsedInfo.carNumber || "",
+          isUnloaded: parsedInfo.isUnloaded || false,
+          pt: parsedInfo.pt || 0,
+          rt: parsedInfo.rt || 0
         };
       
         // 모달을 열 때 항상 수정 폼을 숨기고 기본 상태로 리셋
@@ -1362,6 +1379,7 @@
       function enableVehicleEditMode(isEdit) {
         const btnGroup = document.getElementById('vehBtnGroup');
         const editForm = document.getElementById('vehEditForm');
+        const countsRow = document.getElementById('editCountsRow');
         
         if (!btnGroup || !editForm) return;
       
@@ -1378,9 +1396,17 @@
           // 허브 드롭다운 옵션 바인딩
           const hubSelect = document.getElementById('editFieldHub');
           hubSelect.innerHTML = HUB_LIST.map(hub => {
-            const isSelected = (hub === activeModalVehicle.hub);
+            const isSelected = (hub === activeModalVehicle.hub) || ((hub === "부천3") && (activeModalVehicle.hub === "클러스터")) || ((hub === "광주") && (activeModalVehicle.hub === "경기광주1"));
             return `<option value="${hub}" ${isSelected ? 'selected' : ''}>${hub}</option>`;
           }).join('');
+
+          if (activeModalVehicle.isUnloaded) {
+            countsRow.style.display = 'flex';
+            document.getElementById('editFieldPt').value = activeModalVehicle.pt;
+            document.getElementById('editFieldRt').value = activeModalVehicle.rt;
+          } else {
+            countsRow.style.display = 'none';
+          }
       
         } else {
           btnGroup.style.display = 'flex';
@@ -1405,6 +1431,11 @@
           hub: newHub,
           carNumber: newCarNum
         };
+
+        if (activeModalVehicle.isUnloaded) {
+          payload.pt = parseInt(document.getElementById('editFieldPt').value, 10) || 0;
+          payload.rt = parseInt(document.getElementById('editFieldRt').value, 10) || 0;
+        }
 
         const saveBtn = document.querySelector('.btn-save-edit');
         const cancelBtn = document.querySelector('.btn-cancel-edit');
@@ -1578,11 +1609,22 @@
         thumbContainer.style.display = 'flex';
         noPreviewText.style.display = 'none';
 
-        // const getImageUrl = (carId) => `${CONFIG.WORKER_URL}?action=viewImage&carId=${carId}&key=${APP_KEY}`;
+        async function displayImage(carId, targetImgElement) {
+          try {
+            const res = await UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=viewImage&carId=${encodeURIComponent(carId)}`);
+            if (!res.ok) throw new Error("이미지 다운로드 실패");
+            const blob = await res.blob();
+            const objUrl = URL.createObjectURL(blob);
+            targetImgElement.src = objUrl;
+            targetImgElement.style.display = 'block';
+          } catch (e) {
+            console.error("이미지 표기 실패:", e);
+          }
+        }
 
         const firstImage = imagesData[0];
         mainImg.style.display = 'none'; // 로딩 전 숨김
-        loadImage(firstImage.carId, mainImg); // 안전한 로드 호출
+        displayImage(firstImage.carId, mainImg);
         mainImg.onclick = function() { downloadImageR2(firstImage.carId, hubStr); };
 
         imagesData.forEach((item, index) => {
@@ -1593,12 +1635,12 @@
           const img = document.createElement('img');
           img.className = 'thumb-img';
           wrapper.appendChild(img);
-          loadImage(item.carId, img);
+          displayImage(item.carId, img);
       
           wrapper.onclick = function() {
             document.querySelectorAll('.thumb-wrapper').forEach(w => w.classList.remove('active'));
             wrapper.classList.add('active');
-            mainImg.src = getImageUrl(item.carId); 
+            displayImage(item.carId, mainImg);
             mainImg.onclick = function() { downloadImageR2(item.carId, hubStr); };
           };
       
@@ -2326,7 +2368,7 @@
         const listItemsHTML = [];
 
         filteredData.forEach((item) => {
-          const { carId, hub, type, isArrival, wave, hasFile, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, seq } = item;
+          const { carId, hub, type, isArrival, wave, hasFile, isUnloaded, carNumber, pt, rt, arrivalTime, unloadingTime, seq, isChanged } = item;
 
           const prefix = (wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(hub) ? "◇" : "");
           const hubStr = UTILS.getHubDisplayName(hub);
@@ -2359,10 +2401,14 @@
             carInfo: carInfo,
             carSeq: seq,
             isArrival: isArrival,
+            isUnloaded: isUnloaded,
             hubStr: hubStr,
             hub: hub,
             wave: wave,
             carNumber: carNumber,
+            pt: ptNum,
+            rt: rtNum,
+            isChanged: isChanged,
             carStatus: isArrival 
               ? `${arrivalTime !== unloadingTime ? `${arrivalTime} - 동인천1 도착` : ""}${isUnloaded ? `\n${unloadingTime} - ${(ptNum + rtNum > 0) ? UTILS.getUnloadingStatus(ptNum, rtNum, 2) : ""} 하차 완료` : ""}` 
               : "미도착"
@@ -2376,7 +2422,7 @@
                 data-info='${encodedInfo}' 
                 onclick="showDetail(this)">
               <span class="type ${UTILS.getTypeClassStr(type)}"><small>${UTILS.escapeHtml(type)}</small></span>
-              <span class="car-info ${isUnloaded ? "text-unloaded" : ""}">
+              <span class="car-info ${isUnloaded ? "text-unloaded" : ""} ${isChanged ? "changed" : ""}">
                 ${(USER_TYPE === "ADMIN") ? `
                   <button type="button" 
                           onclick="openCameraForCar(event, this)" 
