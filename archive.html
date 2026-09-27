@@ -1396,7 +1396,7 @@
           // 허브 드롭다운 옵션 바인딩
           const hubSelect = document.getElementById('editFieldHub');
           hubSelect.innerHTML = HUB_LIST.map(hub => {
-            const isSelected = (hub === activeModalVehicle.hub) || ((hub === "부천3") && (activeModalVehicle.hub === "클러스터")) || ((hub === "광주") && (activeModalVehicle.hub === "경기광주1"));
+            const isSelected = (hub === activeModalVehicle.hub) || ((hub === "클러스터") && (activeModalVehicle.hub === "부천3")) || ((hub === "경기광주1") && (activeModalVehicle.hub === "광주"));
             return `<option value="${hub}" ${isSelected ? 'selected' : ''}>${hub}</option>`;
           }).join('');
 
