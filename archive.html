@@ -2356,7 +2356,7 @@
             filteredData.push(item);
           } else {
             const safeCarNum = String(item.carNumber).replace(/\s+/g, '');
-            const uniqueKey = `${item.hub}_${safeCarNum}`;
+            const uniqueKey = `${item.hub}_${item.wave}_${safeCarNum}`;
       
             if (!seenActiveCars.has(uniqueKey)) {
               seenActiveCars.add(uniqueKey);
