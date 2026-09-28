@@ -995,7 +995,7 @@
       </div>
     </div>
 
-    <div id="uploadOverlay" class="modal" style="display: none; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; background: rgba(0,0,0,0.75); backdrop-filter: blur(2px);">
+    <div id="uploadOverlay" class="modal" style="display: none; z-index: 10001; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; background: rgba(0,0,0,0.75); backdrop-filter: blur(2px);">
       <div class="spinner-mini" style="width: 40px; height: 40px; border-width: 4px; margin-bottom: 16px;"></div>
       <div id="uploadOverlayMsg" style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">처리 중...</div>
       <div id="uploadOverlaySub" style="font-size: 14px; color: #cbd5e1;">잠시만 기다려주세요.</div>
@@ -1378,10 +1378,7 @@
       
         if (cardPayloads.length === 0) return alert("추가할 차량 데이터가 없습니다.");
 
-        UTILS.showLoading("차량 추가 중...","서버에 차량을 등록 중입니다.");
-      
-        const btn = document.querySelector('.btn-submit');
-        btn.innerText = "처리 중..."; btn.disabled = true;
+        UTILS.showLoading("🚚 차량 추가 중...","서버에 차량을 등록 중입니다.");
       
         const targetUrl = CONFIG.WORKER_URL;
         UTILS.apiFetch(`${targetUrl}?action=addManualList`, {
@@ -1406,9 +1403,6 @@
         .catch(err => {
           UTILS.hideLoading();
           alert("통신 에러 발생");
-        })
-        .finally(() => {
-          btn.innerText = "추가하기"; btn.disabled = false;
         });
       }
 
@@ -1502,6 +1496,7 @@
       
         const payload = { carId, wave, hub, carNumber };
 
+        closeChecklistEditModal();
         UTILS.showLoading("⏳ 차량 정보 수정 중...", "서버에 반영 중입니다.");
         
         const targetUrl = CONFIG.WORKER_URL;
@@ -1515,7 +1510,6 @@
           UTILS.hideLoading();
           if (result.status === "success") {
             UTILS.showToast("✅ 차량 정보가 수정되었습니다.");
-            closeChecklistEditModal();
             fetchData(false);
           } else {
             alert("수정 실패: " + result.message);
@@ -1535,7 +1529,7 @@
         const carInfo = btnElement.getAttribute('data-info');
       
         const confirmDel = confirm(
-          `🚨 [${carInfo}] 차량을 삭제하시겠습니까?\n구글 시트에서도 완전히 삭제되며 복구할 수 없습니다.`
+          `🚨 [${carInfo}] 차량을 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다.`
         );
         if (!confirmDel) return;
 
