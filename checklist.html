@@ -1008,7 +1008,7 @@
       ];
 
       let cardIdCounter = 0;
-
+      let currentChecklistData = [];
       var pendingRequests = 0;
       window.syncInterval = null;
 
@@ -1614,113 +1614,55 @@
 
       function markAsArrived(cId, btnElement) {
         btnElement.disabled = true;
-      
-        var listInner = document.getElementById('list-inner');
-        var listItem = btnElement.closest('.list-item');
-        var isAlreadyWaiting = listItem.classList.contains('waiting');
-      
-        var wave = listItem.getAttribute('data-wave');
-        var isBucheon = listItem.getAttribute('data-bucheon') === 'true';
-        var rowIdx = listItem.getAttribute('data-row-idx');
-      
-        var nextArrState = !isAlreadyWaiting;
 
-        // 캐시 선 변경
-        try {
-          var rawCache = localStorage.getItem("CACHED_DATA");
-          if (rawCache) {
-            var cachedList = JSON.parse(rawCache);
-            var target = cachedList.find(function(item) { return item.cId === cId; });
-            if (target) {
-              target.arr = nextArrState;
-              target.aTime = nextArrState ? Date.now() : 0;
-              localStorage.setItem("CACHED_DATA", JSON.stringify(cachedList));
-            }
-          }
-        } catch (e) {
-          console.error("캐시 선 업데이트 실패:", e);
+        // 1) 대상 차량 찾기
+        const target = currentChecklistData.find(item => item.cId === cId);
+        if (!target) {
+          btnElement.disabled = false;
+          return;
         }
-      
-        // 화면 선 변경
-        if (nextArrState) { 
-          btnElement.innerHTML = CONFIG.ICONS.checked;
-          listItem.classList.remove('not-arrived');
-          listItem.classList.add('waiting');
-          
-          var firstUnloaded = listInner.querySelector('.list-item.unloaded');
-          if (firstUnloaded) {
-            listInner.insertBefore(listItem, firstUnloaded);
-          } else {
-            listInner.appendChild(listItem);
-          }
-      
-          if (!isBucheon) updateRemainCount(wave, -1);
-        } else {
-          btnElement.innerHTML = CONFIG.ICONS.empty;
-          listItem.classList.remove('waiting');
-          listItem.classList.add('not-arrived');
-      
-          var notArrivedItems = Array.from(listInner.querySelectorAll('.list-item.not-arrived'))
-            .filter(function(item) { return item !== listItem; });
-      
-          var nextItem = notArrivedItems.find(function(item) {
-            var itemWave = item.getAttribute('data-wave');
-            if (wave !== itemWave) {
-              return wave < itemWave;
-            }
-            return Number(item.getAttribute('data-row-idx')) > Number(rowIdx);
-          });
-      
-          if (nextItem) {
-            listInner.insertBefore(listItem, nextItem);
-          } else {
-            var nextGroupFirstItem = listInner.querySelector('.list-item.waiting, .list-item.unloaded');
-            if (nextGroupFirstItem) {
-              listInner.insertBefore(listItem, nextGroupFirstItem);
-            } else {
-              listInner.appendChild(listItem);
-            }
-          }
-          if (!isBucheon) updateRemainCount(wave, 1);
-        }
-      
-        filterList();
+
+        // 2) 롤백을 위해 이전 상태 백업
+        const prevArr = target.arr;
+        const prevTime = target.aTime;
+
+        // 3) 낙관적 상태 즉시 변경
+        target.arr = !prevArr;
+        target.aTime = target.arr ? Date.now() : 0;
+
+        // 가벼운 터치 햅틱 반응 (현장 터치감 극대화)
+        if (navigator.vibrate) navigator.vibrate(25);
+
+        // 4) 백그라운드 서버 전송
         stopSyncInterval();
         pendingRequests++;
-      
+
         UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=toggleCheck&cId=${cId}`, { redirect: "follow" })
-          .then(function(res) { return res.json(); })
-          .then(function(result) {
-            btnElement.disabled = false;
+          .then(res => res.json())
+          .then(result => {
             pendingRequests--;
-      
-            var isError = (CONFIG.BACKEND === "WORKER") 
-              ? (result.status === "error") 
-              : (result.status === "error" || (result.result && !result.result.success));
-      
+            const isError = (result.status === "error") || (result.result && !result.result.success);
+
             if (isError) {
-              alert(result.message || (result.result && result.result.message) || "상태 변경 실패");
-              fetchData(false); // 실패 시에만 캐시 없이 서버 데이터로 강제 롤백
+              // 실패 시 원래 상태로 롤백
+              target.arr = prevArr;
+              target.aTime = prevTime;
+              localStorage.setItem("CACHED_DATA", JSON.stringify(currentChecklistData));
+              updateUI(currentChecklistData);
+              alert(result.message || "상태 변경 실패: 원래 상태로 복구합니다.");
             }
-            // 성공 시에는 fetchData를 바로 호출하지 않고 낙관적 상태를 유지합니다.
             if (pendingRequests === 0) checkWorkTimeAndSync();
           })
-          .catch(function(err) {
-            btnElement.disabled = false;
+          .catch(err => {
             pendingRequests--;
-            alert("네트워크 연결 오류. 원래 상태로 복구합니다.");
-            fetchData(false);
+            // 통신 에러 시 원래 상태로 롤백
+            target.arr = prevArr;
+            target.aTime = prevTime;
+            localStorage.setItem("CACHED_DATA", JSON.stringify(currentChecklistData));
+            updateUI(currentChecklistData);
+            alert("네트워크 연결 오류로 상태를 복구합니다.");
             if (pendingRequests === 0) checkWorkTimeAndSync();
           });
-      }
-
-      function updateRemainCount(wave, delta) {
-        var countElId = (wave === "1W") ? 'remain1W-count' : 'remain2W-count';
-        var countEl = document.getElementById(countElId);
-        if (countEl) {
-          var currentVal = parseInt(countEl.innerText, 10) || 0;
-          countEl.innerText = Math.max(0, currentVal + delta);
-        }
       }
 
       function checkWorkTimeAndSync() {
@@ -1759,6 +1701,7 @@
           const cachedData = localStorage.getItem("CACHED_DATA");
           if (cachedData) {
             try {
+              currentChecklistData = JSON.parse(cachedData);
               updateUI(JSON.parse(cachedData));
             } catch(e) {}
           }
@@ -1771,8 +1714,9 @@
               document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
               return;
             }
-            localStorage.setItem("CACHED_DATA", JSON.stringify(result.data));
-            updateUI(result.data); // 성공 시 기존 updateUI 함수 호출
+            currentChecklistData = result.data || [];
+            localStorage.setItem("CACHED_DATA", JSON.stringify(currentChecklistData));
+            updateUI(currentChecklistData); // 성공 시 기존 updateUI 함수 호출
           })
           .catch(error => {
             document.getElementById('status-msg').innerText = "❌ 서버 에러: " + error.message;
