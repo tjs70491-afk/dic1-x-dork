@@ -1719,7 +1719,7 @@
           } else {
             // 대기중 / 미도착 차량 중복 제거
             var safeCarNum = String(item.carN).replace(/\s+/g, '');
-            var uniqueKey = item.hub + "_" + safeCarNum;
+            var uniqueKey = item.hub + "_" + wave(item.cId) + "_" + safeCarNum;
   
             if (!activeCarMap.has(uniqueKey)) {
               activeCarMap.set(uniqueKey, item); // 처음 본 차량이면 저장
