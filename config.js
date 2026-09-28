@@ -137,24 +137,28 @@ const UTILS = {
     }
   },
 
-  showToast: function(message, duration = 2500) {
+  showToast: function(message, duration = 2000) {
     let toast = document.getElementById('user-toast');
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'user-toast';
+      toast.className = 'toast-base toast-bottom'; // 클래스 정상 바인딩
       document.body.appendChild(toast);
     }
 
     toast.innerText = message;
+    
+    // 강제 리플로우를 발생시켜 연속 호출 시에도 트랜지션 애니메이션 보장
+    void toast.offsetWidth;
     toast.classList.add('show');
 
     clearTimeout(this._bottomToastTimer);
     this._bottomToastTimer = setTimeout(() => {
       toast.classList.remove('show');
-    }, 1800);
+    }, duration);
   },
 
-  showRemoteToast: function(msg) {
+  showRemoteToast: function(msg, duration = 2800) {
     let toast = document.getElementById('remote-toast');
     if (!toast) {
       toast = document.createElement('div');
@@ -163,6 +167,8 @@ const UTILS = {
       document.body.appendChild(toast);
     }
     toast.innerHTML = msg;
+    
+    void toast.offsetWidth;
     toast.classList.add('show');
 
     // 기기 진동 지원 시 가벼운 햅틱 반응 (30ms)
@@ -171,7 +177,7 @@ const UTILS = {
     clearTimeout(this._topToastTimer);
     this._topToastTimer = setTimeout(() => {
       toast.classList.remove('show');
-    }, 2800);
+    }, duration);
   },
 
   calculateSummary: function(sheetData) {
