@@ -1383,10 +1383,7 @@
       
         if (cardPayloads.length === 0) return alert("추가할 차량 데이터가 없습니다.");
 
-        UTILS.showLoading("⏳ 차량 추가 중...", "서버에 반영 중입니다.");
-
-        const btn = document.querySelector('.btn-submit');
-        btn.innerText = "처리 중..."; btn.disabled = true;
+        UTILS.showLoading("🚚 차량 추가 중...", "서버에 반영 중입니다.");
       
         const targetUrl = CONFIG.WORKER_URL;
         UTILS.apiFetch(`${targetUrl}?action=addManualList`, {
@@ -1411,10 +1408,7 @@
         })
         .catch(err => {
           UTILS.hideLoading();
-          alert("통신 에러 발생")
-        })
-        .finally(() => {
-          btn.innerText = "추가하기"; btn.disabled = false;
+          alert("통신 에러 발생. 잠시 후 다시 시도해 주세요.")
         });
       }
 
