@@ -138,31 +138,40 @@ const UTILS = {
   },
 
   showToast: function(message, duration = 2500) {
-    let toast = document.getElementById('globalToastMsg');
+    let toast = document.getElementById('user-toast');
     if (!toast) {
       toast = document.createElement('div');
-      toast.id = 'globalToastMsg';
-      toast.style.cssText = `
-        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-        background: rgba(32, 33, 36, 0.9); color: #fff; padding: 12px 24px;
-        border-radius: 25px; font-size: 14px; font-weight: 500; z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.25); pointer-events: none;
-        transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0;
-        white-space: nowrap;
-      `;
+      toast.id = 'user-toast';
       document.body.appendChild(toast);
     }
 
     toast.innerText = message;
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateX(-50%) translateY(0)';
+    toast.classList.add('show');
 
-    if (this._toastTimer) clearTimeout(this._toastTimer);
+    clearTimeout(this._bottomToastTimer);
+    this._bottomToastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 1800);
+  },
 
-    this._toastTimer = setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(-50%) translateY(10px)';
-    }, duration);
+  showRemoteToast: function(msg) {
+    let toast = document.getElementById('remote-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'remote-toast';
+      toast.className = 'toast-base toast-top';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = msg;
+    toast.classList.add('show');
+
+    // 기기 진동 지원 시 가벼운 햅틱 반응 (30ms)
+    if (navigator.vibrate) navigator.vibrate(30);
+
+    clearTimeout(this._topToastTimer);
+    this._topToastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2800);
   },
 
   calculateSummary: function(sheetData) {
