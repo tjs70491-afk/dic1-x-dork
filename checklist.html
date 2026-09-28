@@ -1371,6 +1371,8 @@
         });
       
         if (cardPayloads.length === 0) return alert("추가할 차량 데이터가 없습니다.");
+
+        UTILS.showLoading("차량 추가 중...","서버에 차량을 등록 중입니다.");
       
         const btn = document.querySelector('.btn-submit');
         btn.innerText = "처리 중..."; btn.disabled = true;
@@ -1383,18 +1385,22 @@
         })
         .then(res => res.json())
         .then(result => {
+          UTILS.hideLoading();
           if (result.status === "success") {
             UTILS.showToast(`✅ ${result.message}`);
 
-            fetchData(false);
-
             document.getElementById('cardContainer').innerHTML = '';
             document.getElementById('addCardModal').style.display = 'none';
+            
+            fetchData(false);
           } else {
             alert("추가 실패: " + result.message);
           }
         })
-        .catch(err => alert("통신 에러 발생"))
+        .catch(err => {
+          UTILS.hideLoading();
+          alert("통신 에러 발생");
+        })
         .finally(() => {
           btn.innerText = "추가하기"; btn.disabled = false;
         });
@@ -1490,13 +1496,7 @@
       
         const payload = { carId, wave, hub, carNumber };
 
-        const submitBtn = document.querySelector('.btn-edit-submit');
-        const cancelBtn = document.querySelector('.btn-edit-cancel');
-        const originalText = submitBtn.innerText;
-      
-        submitBtn.disabled = true;
-        cancelBtn.disabled = true;
-        submitBtn.innerText = "수정 중... ⏳";
+        UTILS.showLoading("⏳ 차량 정보 수정 중...", "서버에 반영 중입니다.");
         
         const targetUrl = CONFIG.WORKER_URL;
         UTILS.apiFetch(`${targetUrl}?action=editVehicle`, {
@@ -1506,6 +1506,7 @@
         })
         .then(res => res.json())
         .then(result => {
+          UTILS.hideLoading();
           if (result.status === "success") {
             UTILS.showToast("✅ 차량 정보가 수정되었습니다.");
             closeChecklistEditModal();
@@ -1514,12 +1515,9 @@
             alert("수정 실패: " + result.message);
           }
         })
-        .catch(err => alert("통신 오류가 발생했습니다."))
-        .finally(() => {
-          // [로딩 해제]
-          submitBtn.disabled = false;
-          cancelBtn.disabled = false;
-          submitBtn.innerText = originalText;
+        .catch(err => {
+          UTILS.hideLoading();
+          alert("통신 오류가 발생했습니다.");
         });
       }
       
@@ -1535,10 +1533,7 @@
         );
         if (!confirmDel) return;
 
-        const originalContent = btnElement.innerHTML;
-        btnElement.disabled = true;
-        btnElement.innerHTML = "⏳";
-        btnElement.style.cursor = "not-allowed";
+        UTILS.showLoading("⏳ 차량 정보 수정 중...", "서버에 반영 중입니다.");
         
         const targetUrl = CONFIG.WORKER_URL;
         UTILS.apiFetch(`${targetUrl}?action=deleteVehicle`, {
@@ -1548,21 +1543,17 @@
         })
         .then(res => res.json())
         .then(result => {
+          UTILS.hideLoading();
           if (result.status === "success") {
             UTILS.showToast("🗑️ 차량이 성공적으로 삭제되었습니다.");
             fetchData(false);
           } else {
             alert("삭제 실패: " + result.message);
-            btnElement.disabled = false;
-            btnElement.innerHTML = originalContent;
-            btnElement.style.cursor = "pointer";
           }
         })
         .catch(err => {
+          UTILS.hideLoading();
           alert("통신 오류가 발생했습니다.");
-          btnElement.disabled = false;
-          btnElement.innerHTML = originalContent;
-          btnElement.style.cursor = "pointer";
         });
       }
 
