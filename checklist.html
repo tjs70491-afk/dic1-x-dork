@@ -39,13 +39,19 @@
       
       /* 헤더 및 상태 표시 */
       .header-area { 
-        position: relative;
         display: flex; 
-        justify-content: center; /* title-wrap을 화면 정중앙에 배치 */
+        justify-content: space-between; 
         align-items: center; 
         margin-bottom: 20px; 
         flex-shrink: 0;
         width: 100%;
+        position: relative;
+      }
+      .header-left, .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
       }
       h1 { 
         margin: 0; 
@@ -71,10 +77,12 @@
       /* 타이틀 및 QR 버튼 래퍼 */
       .title-wrap {
         display: flex;
-        flex-direction: column; /* 세로 배치 */
-        align-items: center;    /* 세로 기준 가운데 정렬 */
-        gap: 8px;              /* h1과 상태메시지 간격 */
+        flex-direction: column;
+        align-items: center;
         text-align: center;
+        flex: 1 1 auto;
+        min-width: 0; /* 모바일에서 말줄임 및 오버플로우 방지 */
+        padding: 0 6px;
       }
 
       /* 세로 배치(모바일) 레이아웃 */
@@ -86,6 +94,23 @@
         min-height: 0;
         overflow: visible; 
       }
+
+      .header-btn {
+        background: white;
+        border: 1px solid #cce0ff;
+        border-radius: 8px;
+        padding: 6px 10px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        font-size: 15px;
+        font-weight: bold;
+      }
+      .header-btn:hover { background: #e8f0fe; border-color: #1a73e8; }
+      .header-btn svg { width: 22px; height: 22px; fill: #1a73e8; }
       
       /* 상단 패널 */
       .top-panel { flex: auto; width: 100%; min-width: 300px; display: flex; flex-direction: column; gap: 20px; }
@@ -203,6 +228,12 @@
         text-align: left;
         display: flex;
         align-items: center;
+      }
+
+      .car-info.changed {
+        color: #e65100 !important;
+        font-style: italic !important;
+        font-weight: 700 !important;
       }
       
       /* 상태별 뱃지 디자인 */
@@ -645,6 +676,14 @@
       body.high-contrast .list-item:hover {
         background-color: #222222 !important;
       }
+
+      body.high-contrast .car-info.changed {
+        color: #ff9100 !important; /* 쨍한 네온 오렌지 */
+        text-shadow: 0 0 6px rgba(255, 145, 0, 0.6);
+      }
+      body.high-contrast .list-item.waiting .car-info.changed {
+        color: #ffab40 !important;
+      }
       
       /* 미도착 차량 */
       body.high-contrast .list-item.not-arrived .car-info {
@@ -708,6 +747,37 @@
       body.high-contrast .modal-open-btn svg {
         fill: #ffffff !important;
       }
+
+      body.high-contrast .modal-content,
+      body.high-contrast .add-modal-content {
+        background-color: #121212 !important;
+        color: #ffffff !important;
+        border: 1px solid #444444 !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+      }
+      
+      body.high-contrast .modal-content h2,
+      body.high-contrast .modal-content h3,
+      body.high-contrast .modal-content h4,
+      body.high-contrast .add-modal-header h2 {
+        color: #ffffff !important; /* 이제 검은 모달 배경 위에서 선명하게 보임 */
+      }
+      
+      body.high-contrast .edit-form-group label {
+        color: #aaaaaa !important;
+      }
+      
+      body.high-contrast .edit-form-group input,
+      body.high-contrast .edit-form-group select {
+        background-color: #222222 !important;
+        color: #ffffff !important;
+        border: 1px solid #555555 !important;
+      }
+      
+      body.high-contrast .close-btn,
+      body.high-contrast .add-modal-header .close-x {
+        color: #ffffff !important;
+      }
       
 /* ============================================================
 모바일 글자 최우선 모드
@@ -716,6 +786,9 @@
         body { 
           padding: 12px 3px; /* 모바일 전체 좌우 여백 축소 */
         }
+        h1 { font-size: clamp(18px, 4.5vw, 24px) !important; white-space: nowrap; }
+        .header-btn { padding: 5px 8px; font-size: 13px; }
+        .header-btn svg { width: 18px; height: 18px; }
         .card { 
           padding: 14px 4px; /* 카드 좌우 내부 여백 축소 */
         }
@@ -744,11 +817,28 @@
   <body>
     
     <div class="header-area">
-      <button type="button" id="addOpenBtn" class="modal-open-btn" onclick="openManualAddModal()">➕</button>
-      <button type="button" id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleHighContrastMode()" title="고대비/번인방지 모드">🌓</button>
+      <div class="header-left">
+        <button type="button" id="addOpenBtn" class="header-btn" onclick="openManualAddModal()">➕</button>
+        <button type="button" id="themeToggleBtn" class="header-btn theme-btn" onclick="toggleHighContrastMode()">🌓</button>
+      </div>
       <div class="title-wrap">
         <h1>🚚 2W 간선차량 목록</h1>
         <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
+      </div>
+      
+      <div class="header-right">
+        <button type="button" id="qrOpenBtn" class="header-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
+          <svg viewBox="0 0 32 32">
+            <path fill-rule="evenodd" d="M5 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm0 2h8v8H5V5z"/>
+            <rect x="7" y="7" width="4" height="4" rx="1"/>
+            <path fill-rule="evenodd" d="M19 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-8zm0 2h8v8h-8V5z"/>
+            <rect x="21" y="7" width="4" height="4" rx="1"/>
+            <path fill-rule="evenodd" d="M5 17a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H5zm0 2h8v8H5v-8z"/>
+            <rect x="7" y="21" width="4" height="4" rx="1"/>
+            <path fill-rule="evenodd" d="M19 17a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8zm0 2h8v8h-8v-8z"/>
+            <rect x="22" y="22" width="2" height="2" rx="0.5"/>
+          </svg>
+        </button>
       </div>
       <button type="button" id="qrOpenBtn" class="modal-open-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
         <svg viewBox="0 0 32 32">
@@ -1798,7 +1888,7 @@
               '<button onclick="markAsArrived(\'' + cId + '\', this)" class="checkBox" ' + (unl ? 'disabled' : '') + '>' +
                 checkIcon +
               '</button>' +
-              '<span class="car-info ' + (unl ? "text-unloaded" : "") + '">' + carInfo + '</span>' +
+              '<span class="car-info ' + (unl ? "text-unloaded" : "") + (item.isChanged ? " changed" : "") + '">' + carInfo + '</span>' +
               ((!unl && USER_TYPE !== "guest") ? (
                 '<div class="item-actions">' +
                   '<button type="button" class="btn-item-action btn-item-edit" title="수정" ' +
