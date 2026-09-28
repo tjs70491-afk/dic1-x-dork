@@ -1412,7 +1412,7 @@
         .catch(err => {
           UTILS.hideLoading();
           alert("통신 에러 발생")
-        });
+        })
         .finally(() => {
           btn.innerText = "추가하기"; btn.disabled = false;
         });
@@ -2247,14 +2247,10 @@
       }
 
       async function uploadToBackendR2(imageBlob) {
-        const overlay = document.getElementById('uploadOverlay');
-        overlay.style.display = 'flex';
-        overlay.innerHTML = `
-          <div style="margin-bottom: 10px; font-size: 18px;">사진 업로드 중 📡</div>
-          <div style="font-size: 14px; color: #aaa;">스토리지에 저장 중입니다...</div>
-        `;
-      
+        
         try {
+
+          UTILS.showLoading("사진 업로드 중 📡","스토리지에 저장 중입니다...");
 
           const carId = currentUploadCarId;
           
@@ -2263,29 +2259,33 @@
           formData.append("carId", carId);
           formData.append("isArrival", currentUploadCarArr);
           formData.append("imageFile", imageBlob, `${carId}_${Date.now()}.jpg`); // 파일 첨부
-      
-          const response = await UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=uploadR2Image`, {
+
+          UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=uploadR2Image`, {
             method: "POST",
             body: formData
+          })
+          .then(res => res.json())
+          .then(result => {
+            UTILS.hideLoading();
+            if (result.status === "success") {
+              UTILS.showToast("✅ 사진 저장 완료!");
+              fetchData();
+            } else {
+              alert("저장 실패: " + result.message);
+            }
+          })
+          .catch(err => {
+            UTILS.hideLoading();
+            alert("통신 에러 발생: 사진이 저장되지 않았습니다.");
+          })
+          .finally(() => {
+            if (navigator.vibrate) navigator.vibrate(100);
+            isCapturing = false;
           });
-      
-          const result = await response.json();
-          if (result.status !== "success") {
-            throw new Error(result.message || "사진 저장 실패");
-          }
-      
-          // 워커가 R2 저장 및 시트 업데이트를 완료했으므로 리스트 갱신
-          if (navigator.vibrate) navigator.vibrate(100);
-          isCapturing = false;
-          overlay.style.display = 'none';
-          UTILS.showToast("✅ 사진 저장 완료!");
-          
-          applyOptimisticUI(carId);
-          updateLocalCache(carId);
           
         } catch (err) {
           isCapturing = false;
-          overlay.style.display = 'none';
+          UTILS.hideLoading();
           alert("❌ 전송 실패: " + err.message);
         }
       }
