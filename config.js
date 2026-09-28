@@ -180,6 +180,18 @@ const UTILS = {
     }, duration);
   },
 
+  showLoading: function(msg, subMsg = "잠시만 기다려주세요...") {
+    const overlay = document.getElementById('uploadOverlay');
+    document.getElementById('uploadOverlayMsg').innerText = msg;
+    document.getElementById('uploadOverlaySub').innerText = subMsg;
+    overlay.style.display = 'flex';
+  },
+  
+  hideLoading: function() {
+    const overlay = document.getElementById('uploadOverlay');
+    overlay.style.display = 'none';
+  },
+
   calculateSummary: function(sheetData) {
     const isNotBucheon = (hub) => !String(hub).includes("부천3");
   
