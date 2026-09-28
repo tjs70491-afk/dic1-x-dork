@@ -576,6 +576,50 @@
       .btn-submit { background: #1a73e8; border: none; color: white; }
       .btn-cancel { background: white; border: 1px solid #dadce0; color: #3c4043; }
 
+      .action-toast {
+        position: fixed;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #1e293b;
+        color: #ffffff;
+        padding: 12px 20px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        z-index: 10001;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+        opacity: 0;
+        max-width: 90vw;
+        box-sizing: border-box;
+      }
+      .action-toast.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+      .btn-toast-cam {
+        background: #1a73e8;
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn-toast-cam:active { transform: scale(0.95); }
+      .btn-toast-close {
+        background: transparent;
+        color: #94a3b8;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 0 4px;
+      }
+
       @media (max-width: 768px) {
         body {
           height: auto;
@@ -864,6 +908,12 @@
       </div>
     </div>
 
+    <div id="photoPromptToast" class="action-toast">
+      <span id="photoPromptMsg" style="font-size: 14px; font-weight: 600;"></span>
+      <button type="button" id="photoPromptBtn" class="btn-toast-cam">📸 지금 촬영</button>
+      <button type="button" class="btn-toast-close" onclick="closePhotoPromptToast()">&times;</button>
+    </div>
+
     <script>
 
       const USER_TYPE = UTILS.getUserType();
@@ -891,6 +941,9 @@
         "인천14", "인천14CFC", "인천15", "인천16", "인천22", "인천28", "인천30", "인천45",
         "전라광주2", "창원1", "천안2", "천안6", "평택1"
       ];
+
+      let pendingPhotoPromptCar = null;
+      let photoPromptDismissed = false;
       
       let cardIdCounter = 0;
 
@@ -928,6 +981,40 @@
           }
         }
       });
+
+      function checkNeedPhotoCars(sheetData) {
+        if (photoPromptDismissed) return;
+        if (!["ADMIN", "X-mover"].includes(USER_TYPE)) return;
+      
+        // needPhoto=true 이고 도착했으나, 사진이 없고, 아직 하차 안된 차량 찾기
+        const target = sheetData.find(item => item.needPhoto && item.isArrival && !item.hasFile && !item.isUnloaded);
+        
+        const toast = document.getElementById('photoPromptToast');
+        if (target) {
+          pendingPhotoPromptCar = target;
+          const hubStr = UTILS.getHubDisplayName(target.hub);
+          document.getElementById('photoPromptMsg').innerText = `🚨 [${hubStr}] 차량 도착!`;
+          
+          document.getElementById('photoPromptBtn').onclick = function() {
+            closePhotoPromptToast();
+            // 해당 차량 정보로 카메라 모달 열기
+            currentUploadCarId = target.carId;
+            currentUploadCarSeq = target.seq;
+            currentUploadCarInfo = `${target.hub} | ${target.carNumber}`;
+            currentUploadCarArr = target.isArrival;
+            openCameraModal();
+          };
+      
+          toast.classList.add('show');
+        } else {
+          toast.classList.remove('show');
+        }
+      }
+      
+      function closePhotoPromptToast() {
+        photoPromptDismissed = true;
+        document.getElementById('photoPromptToast').classList.remove('show');
+      }
 
       function openManualAddModal() {
         document.getElementById('addCardModal').style.display = 'flex';
@@ -2452,6 +2539,7 @@
         
         listInner.innerHTML = listItemsHTML.join('');
         filterList();
+        checkNeedPhotoCars(sheetData);
       }
       
       function updateProgressBar(idPrefix, unloaded, max) {
