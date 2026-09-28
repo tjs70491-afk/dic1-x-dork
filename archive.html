@@ -576,6 +576,50 @@
       .btn-submit { background: #1a73e8; border: none; color: white; }
       .btn-cancel { background: white; border: 1px solid #dadce0; color: #3c4043; }
 
+      .toast-base {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 18px;
+        border-radius: 24px;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+        z-index: 10000;
+        pointer-events: none;
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        max-width: 90vw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      /* 1. 내 작업 피드백 (하단에서 솟아오름) */
+      .toast-bottom {
+        bottom: 25px;
+        background: rgba(33, 33, 33, 0.95);
+        color: #ffffff;
+        transform: translate(-50%, 20px);
+      }
+      .toast-bottom.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      
+      /* 2. 타인/DO 원격 알림 (상단에서 미끄러져 내려옴) */
+      .toast-top {
+        top: 20px;
+        background: #1a73e8; /* 구글 블루 또는 하이라이트 색상 */
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -20px);
+      }
+      .toast-top.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+
       .action-toast {
         position: fixed;
         bottom: 25px;
