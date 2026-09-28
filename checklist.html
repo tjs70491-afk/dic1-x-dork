@@ -252,7 +252,14 @@
       .badge.unloaded { background: #e6f4ea; color: #137333; }
       .badge.waiting { background: #fef7e0; color: #b06000; }
       .badge.not-arrived { background: #f2f4f5; color: #5f6368; }
-      .text-unloaded { text-decoration: line-through; color: #9aa0a6; }
+      .text-unloaded,
+      .car-info.text-unloaded,
+      .list-item.unloaded .car-info {
+        text-decoration: line-through !important;
+        color: #9aa0a6 !important;
+        font-style: normal !important;
+        font-weight: normal !important;
+      }
 
       .checkBox { 
         width: clamp(28px, 6vw, 34px);
