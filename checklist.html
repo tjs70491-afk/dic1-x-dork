@@ -1611,25 +1611,29 @@
       function markAsArrived(cId, btnElement) {
         btnElement.disabled = true;
 
-        // 1) 대상 차량 찾기
+        // 대상 차량 찾기
         const target = currentChecklistData.find(item => item.cId === cId);
         if (!target) {
           btnElement.disabled = false;
           return;
         }
 
-        // 2) 롤백을 위해 이전 상태 백업
+        // 롤백을 위해 이전 상태 백업
         const prevArr = target.arr;
         const prevTime = target.aTime;
 
-        // 3) 낙관적 상태 즉시 변경
+        // 낙관적 상태 즉시 변경
         target.arr = !prevArr;
         target.aTime = target.arr ? Date.now() : 0;
+
+        // 로컬 캐시 즉시 저장 및 화면 즉각 렌더링
+        localStorage.setItem("CACHED_DATA", JSON.stringify(currentChecklistData));
+        updateUI(currentChecklistData);
 
         // 가벼운 터치 햅틱 반응 (현장 터치감 극대화)
         if (navigator.vibrate) navigator.vibrate(25);
 
-        // 4) 백그라운드 서버 전송
+        // 백그라운드 서버 전송
         stopSyncInterval();
         pendingRequests++;
 
@@ -1691,6 +1695,9 @@
       }
 
       function fetchData(useCache = true) {
+
+        if (pendingRequests > 0) return;
+        
         document.getElementById('status-msg').innerText = "데이터 동기화 중...";
 
         if (useCache) {
@@ -1710,6 +1717,7 @@
               document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
               return;
             }
+            if (pendingRequests > 0) return;
             currentChecklistData = result.data || [];
             localStorage.setItem("CACHED_DATA", JSON.stringify(currentChecklistData));
             updateUI(currentChecklistData); // 성공 시 기존 updateUI 함수 호출
@@ -1720,8 +1728,6 @@
       }
 
       function updateUI(data) {
-
-        if (pendingRequests > 0) return; 
         
         var now = new Date();
         var timeStr = [
