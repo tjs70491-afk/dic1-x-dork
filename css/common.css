@@ -122,7 +122,7 @@ h1 { margin: 0; font-size: clamp(22px, 3vh, 32px); color: #1a73e8; }
 
 /* -- 모바일 용 -- */
 @media (max-width: 768px) {
-  body { height: auto; overflow: auto; padding: 12px 6px; }
+  body { height: auto; overflow: auto; padding: 12px 2px; }
   .header-area { flex-direction: column; align-items: center; gap: 10px; margin-bottom: 15px; }
   .status-text { font-size: clamp(14px, 3.5vw, 18px); }
   
