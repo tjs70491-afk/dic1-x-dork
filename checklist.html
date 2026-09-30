@@ -1,45 +1,35 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    
-    <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no interactive-widget=resizes-content">
-    <title>간선차량 목록</title>
-    
-    <link rel="stylesheet" href="./css/common.css">
-    <link rel="stylesheet" href="./css/checklist.css">
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+  <title>간선차량 체크리스트</title>
+  
+  <!-- 공통 CSS & 페이지 전용 CSS -->
+  <link rel="stylesheet" href="./css/common.css">
+  <link rel="stylesheet" href="./css/checklist.css">
 
-    <script src="./js/config.js"></script>
-    <script src="./js/utils.js"></script>
+  <!-- 공통 스크립트 선행 로드 -->
+  <script src="./js/config.js"></script>
+  <script src="./js/utils.js"></script>
+</head>
+<body>
+
+  <!-- 헤더 영역 -->
+  <header class="header-area">
+    <div class="header-left">
+      <button type="button" id="addOpenBtn" class="header-btn" onclick="openManualAddModal()">➕</button>
+      <button type="button" id="themeToggleBtn" class="header-btn theme-btn" onclick="toggleHighContrastMode()">🌓</button>
+    </div>
     
-  </head>
-  <body>
+    <div class="title-wrap">
+      <h1>🚚 2W 간선차량 목록</h1>
+      <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
+    </div>
     
-    <div class="header-area">
-      <div class="header-left">
-        <button type="button" id="addOpenBtn" class="header-btn" onclick="openManualAddModal()">➕</button>
-        <button type="button" id="themeToggleBtn" class="header-btn theme-btn" onclick="toggleHighContrastMode()">🌓</button>
-      </div>
-      <div class="title-wrap">
-        <h1>🚚 2W 간선차량 목록</h1>
-        <div id="status-msg" class="status-text">데이터 불러오는 중...</div>
-      </div>
-      
-      <div class="header-right">
-        <button type="button" id="qrOpenBtn" class="header-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
-          <svg viewBox="0 0 32 32">
-            <path fill-rule="evenodd" d="M5 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm0 2h8v8H5V5z"/>
-            <rect x="7" y="7" width="4" height="4" rx="1"/>
-            <path fill-rule="evenodd" d="M19 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-8zm0 2h8v8h-8V5z"/>
-            <rect x="21" y="7" width="4" height="4" rx="1"/>
-            <path fill-rule="evenodd" d="M5 17a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H5zm0 2h8v8H5v-8z"/>
-            <rect x="7" y="21" width="4" height="4" rx="1"/>
-            <path fill-rule="evenodd" d="M19 17a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8zm0 2h8v8h-8v-8z"/>
-            <rect x="22" y="22" width="2" height="2" rx="0.5"/>
-          </svg>
-        </button>
-      </div>
-      <button type="button" id="qrOpenBtn" class="modal-open-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
+    <div class="header-right">
+      <button type="button" id="qrOpenBtn" class="header-btn" onclick="openQrModal()" title="모바일 접속 QR코드">
         <svg viewBox="0 0 32 32">
           <path fill-rule="evenodd" d="M5 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm0 2h8v8H5V5z"/>
           <rect x="7" y="7" width="4" height="4" rx="1"/>
@@ -52,122 +42,128 @@
         </svg>
       </button>
     </div>
+  </header>
 
-    <div class="main-container">
-      <div class="top-panel">
-        <div class="card">
-          <div class="remain">
-            <div class="remainItem">
-              <div class="remain-info">
-                <h2>1W 남은 차량</h2>
-                <span id="remain1W-count">0</span>
-              </div>
-            </div>
-            <div class="remainItem">
-              <div class="remain-info">
-                <h2>2W 남은 차량</h2>
-                <span id="remain2W-count">0</span>
-              </div>
+  <!-- 메인 레이아웃 -->
+  <main class="main-container">
+    <!-- 상단 대시보드 (남은 수량 / 특수 차량) -->
+    <section class="top-panel">
+      <div class="card">
+        <div class="remain">
+          <div class="remainItem">
+            <div class="remain-info">
+              <h2>1W 남은 차량</h2>
+              <span id="remain1W-count">0</span>
             </div>
           </div>
-
-          <div class="cluster-item">
-            <div class="cluster-info">
-              <h2>클러스터 차량번호</h2>
-              <div id="cluster-list"></div>
-            </div>
-          </div>
-
-          <div class="pico-item">
-            <div class="pico-info">
-              <h2>피코 차량번호</h2>
-              <div id="pico-list"></div>
+          <div class="remainItem">
+            <div class="remain-info">
+              <h2>2W 남은 차량</h2>
+              <span id="remain2W-count">0</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="middle-panel">
-        <div class="card">
-          <h2>🔎 차량 검색</h2>
-          <input type="text" id="searchInput" onkeyup="filterList()" placeholder="차량번호를 입력하세요...">
+        <div class="cluster-item">
+          <div class="cluster-info">
+            <h2>클러스터 차량번호</h2>
+            <div id="cluster-list"></div>
+          </div>
+        </div>
+
+        <div class="pico-item">
+          <div class="pico-info">
+            <h2>피코 차량번호</h2>
+            <div id="pico-list"></div>
+          </div>
         </div>
       </div>
+    </section>
 
-      <div class="bottom-panel">
-        <div class="card">
-          <h2 id="list-title">📋 실시간 차량 목록</h2>
-          <div class="list-container" id="full-list"></div>
-        </div>
+    <!-- 검색창 -->
+    <section class="middle-panel">
+      <div class="card">
+        <h2>🔎 차량 검색</h2>
+        <input type="text" id="searchInput" onkeyup="filterList()" placeholder="차량번호를 입력하세요...">
+      </div>
+    </section>
+
+    <!-- 실시간 리스트 -->
+    <section class="bottom-panel">
+      <div class="card">
+        <h2 id="list-title">📋 실시간 차량 목록</h2>
+        <div class="list-container" id="full-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- [모달 1] 모바일 접속 QR 모달 -->
+  <div id="qrModal" class="modal-overlay" onclick="closeQrModalOnOutside(event)">
+    <div class="modal-content qr-modal-box">
+      <h3>📱 모바일 접속 QR</h3>
+      <p id="qrInfo">스마트폰 카메라로 스캔하세요</p>
+      <p style="display: none; color: #dc2626;" id="qrErrDetail"></p>
+      <img id="qrImage" class="qr-img" src="" alt="접속 QR코드">
+      <button type="button" class="close-btn" onclick="closeQrModal()">닫기</button>
+    </div>
+  </div>
+
+  <!-- [모달 2] 차량 수동 추가 모달 -->
+  <div id="addCardModal" class="modal-overlay" onclick="closeCardModalOnOutside(event)">
+    <div class="modal-content modal-content-wide">
+      <div class="modal-header">
+        <h2 style="margin: 0; font-size: 20px;">차량 추가</h2>
+        <button class="close-x" onclick="closeCardModal()">×</button>
+      </div>
+      
+      <div class="card-scroll-container" id="cardContainer">
+        <div class="btn-add-card" id="btnAddCard" onclick="addNewCard()">+</div>
+      </div>
+  
+      <div class="add-modal-footer">
+        <button type="button" class="btn-submit" onclick="submitCardData()">추가하기</button>
+        <button type="button" class="btn-cancel" onclick="closeCardModal()">취소</button>
       </div>
     </div>
+  </div>
 
-    <div id="qrModal" class="modal-overlay" onclick="closeQrModalOnOutside(event)">
-      <div class="modal-content">
-        <h3>📱 모바일 접속 QR</h3>
-        <p id="qrInfo">스마트폰 카메라로 스캔하세요</p>
-        <p style="display: none;" id="qrErrDetail">에러 내용</p>
-        <img id="qrImage" class="qr-img" src="" alt="접속 QR코드">
-        <button type="button" class="close-btn" onclick="closeQrModal()">닫기</button>
+  <!-- [모달 3] 차량 정보 수정 모달 -->
+  <div id="checklistEditModal" class="modal-overlay" onclick="closeChecklistEditModalOnOutside(event)">
+    <div class="modal-content" style="max-width: 320px;">
+      <h3 style="margin-top: 0;">✏️ 차량 정보 수정</h3>
+      <input type="hidden" id="chkEditCarId">
+
+      <div class="edit-form-group">
+        <label>Wave</label>
+        <select id="chkEditWave">
+          <option value="1W">1W</option>
+          <option value="2W">2W</option>
+        </select>
+      </div>
+
+      <div class="edit-form-group">
+        <label>허브</label>
+        <select id="chkEditHub"></select>
+      </div>
+
+      <div class="edit-form-group">
+        <label>차량번호</label>
+        <input type="text" id="chkEditCarNum" placeholder="차량번호 (예: 경기80바6311)">
+      </div>
+
+      <div class="edit-modal-btns">
+        <button type="button" class="btn-edit-submit" onclick="submitChecklistEdit()">수정 완료</button>
+        <button type="button" class="btn-edit-cancel" onclick="closeChecklistEditModal()">취소</button>
       </div>
     </div>
+  </div>
 
-    <div id="addCardModal" class="add-modal-overlay" onclick="closeCardModalOnOutside(event)">
-      <div class="add-modal-content">
-        <div class="add-modal-header">
-          <h2>차량 추가</h2>
-          <button class="close-x" onclick="closeCardModal()">X</button>
-        </div>
-        
-        <!-- 가로 스크롤 영역 -->
-        <div class="card-scroll-container" id="cardContainer">
-          <!-- 카드가 자바스크립트로 이곳에 추가됩니다 -->
-          <div class="btn-add-card" id="btnAddCard" onclick="addNewCard()">+</div>
-        </div>
-    
-        <!-- 하단 버튼 -->
-        <div class="add-modal-footer">
-          <button type="button" class="btn-submit" onclick="submitCardData()">추가하기</button>
-          <button type="button" class="btn-cancel" onclick="closeCardModal()">취소</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="checklistEditModal" class="modal-overlay" onclick="closeChecklistEditModalOnOutside(event)">
-      <div class="modal-content" style="max-width: 320px;">
-        <h3 style="margin-top: 0;">✏️ 차량 정보 수정</h3>
-        <input type="hidden" id="chkEditCarId">
-
-        <div class="edit-form-group">
-          <label>Wave</label>
-          <select id="chkEditWave">
-            <option value="1W">1W</option>
-            <option value="2W">2W</option>
-          </select>
-        </div>
-
-        <div class="edit-form-group">
-          <label>허브</label>
-          <select id="chkEditHub"></select>
-        </div>
-
-        <div class="edit-form-group">
-          <label>차량번호</label>
-          <input type="text" id="chkEditCarNum" placeholder="차량번호 (예: 경기80바6311)">
-        </div>
-
-        <div class="edit-modal-btns">
-          <button type="button" class="btn-edit-submit" onclick="submitChecklistEdit()">수정 완료</button>
-          <button type="button" class="btn-edit-cancel" onclick="closeChecklistEditModal()">취소</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="uploadOverlay" class="modal" style="display: none; z-index: 10001; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; background: rgba(0,0,0,0.75); backdrop-filter: blur(2px);">
-      <div class="spinner-mini" style="width: 40px; height: 40px; border-width: 4px; margin-bottom: 16px;"></div>
-      <div id="uploadOverlayMsg" style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">처리 중...</div>
-      <div id="uploadOverlaySub" style="font-size: 14px; color: #cbd5e1;">잠시만 기다려주세요.</div>
-    </div>
+  <!-- [공통 로딩 오버레이] UTILS.showLoading 전용 -->
+  <div id="uploadOverlay" class="modal-overlay" style="z-index: 10001; flex-direction: column; background: rgba(0,0,0,0.75);">
+    <div class="spinner-mini" style="width: 40px; height: 40px; border-width: 4px; margin-bottom: 16px;"></div>
+    <div id="uploadOverlayMsg" style="font-size: 20px; font-weight: bold; margin-bottom: 8px; color: white;">처리 중...</div>
+    <div id="uploadOverlaySub" style="font-size: 14px; color: #cbd5e1;">잠시만 기다려주세요.</div>
+  </div>
 
     <script>
       const USER_TYPE = UTILS.getUserType();
