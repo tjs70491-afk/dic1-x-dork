@@ -138,23 +138,29 @@ const UTILS = {
   },
 
   showToast: function(message, duration = 2000) {
+    
     let toast = document.getElementById('user-toast');
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'user-toast';
-      toast.className = 'toast-base toast-bottom'; // 클래스 정상 바인딩
+      toast.className = 'toast-base toast-bottom';
       document.body.appendChild(toast);
+    }
+
+    if (this._bottomToastTimer) {
+      clearTimeout(this._bottomToastTimer);
+      this._bottomToastTimer = null;
     }
 
     toast.innerText = message;
     
-    // 강제 리플로우를 발생시켜 연속 호출 시에도 트랜지션 애니메이션 보장
-    void toast.offsetWidth;
+    toast.classList.remove('show');
+    void toast.offsetWidth; 
     toast.classList.add('show');
 
-    clearTimeout(this._bottomToastTimer);
     this._bottomToastTimer = setTimeout(() => {
       toast.classList.remove('show');
+      this._bottomToastTimer = null; // 메모리 정리
     }, duration);
   },
 
@@ -166,17 +172,24 @@ const UTILS = {
       toast.className = 'toast-base toast-top';
       document.body.appendChild(toast);
     }
-    toast.innerHTML = msg;
+
+    if (this._topToastTimer) {
+      clearTimeout(this._topToastTimer);
+      this._topToastTimer = null;
+    }
     
+    toast.innerText = message;
+
+    toast.classList.remove('show');
     void toast.offsetWidth;
     toast.classList.add('show');
 
     // 기기 진동 지원 시 가벼운 햅틱 반응 (30ms)
     if (navigator.vibrate) navigator.vibrate(30);
 
-    clearTimeout(this._topToastTimer);
     this._topToastTimer = setTimeout(() => {
       toast.classList.remove('show');
+      this._topToastTimer = null;
     }, duration);
   },
 
