@@ -45,7 +45,7 @@ h1 { margin: 0; font-size: clamp(22px, 3vh, 32px); color: #1a73e8; }
 .list-inner { display: inline-flex; flex-direction: column; min-width: 100%; gap: 12px; }
 .list-item { 
   padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; 
-  border-radius: 8px; transition: background 0.2s; 
+  border-radius: 8px; transition: background 0.2s; background: #e8f0fe;
 }
 .list-item:hover { background: #e1f3f4; }
 .list-item.waiting { background: #fee7d0; }
