@@ -102,7 +102,6 @@ body.high-contrast .edit-form-group input, body.high-contrast .edit-form-group s
 
 /* 모바일 전용 폰트/패딩 최적화 */
 @media (max-width: 600px) {
-  body { padding: 12px 3px; }
   h1 { font-size: clamp(18px, 4.5vw, 24px) !important; white-space: nowrap; }
   .header-btn { padding: 5px 8px; font-size: 13px; }
   .header-btn svg { width: 18px; height: 18px; }
