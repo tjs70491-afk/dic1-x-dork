@@ -1073,7 +1073,7 @@
             // 해당 차량 정보로 카메라 모달 열기
             currentUploadCarId = target.carId;
             currentUploadCarSeq = target.seq;
-            currentUploadCarInfo = `${target.hub} | ${target.carNumber}`;
+            currentUploadCarInfo = `${hubStr} | ${target.carNumber}`; 
             currentUploadCarArr = target.isArrival;
             openCameraModal();
           };
@@ -2266,8 +2266,9 @@
             alert("통신 에러 발생: 사진이 저장되지 않았습니다.");
           })
           .finally(() => {
-            if (navigator.vibrate) navigator.vibrate(100);
             isCapturing = false;
+            UTILS.hideLoading();
+            if (navigator.vibrate) navigator.vibrate(100);
           });
           
         } catch (err) {
