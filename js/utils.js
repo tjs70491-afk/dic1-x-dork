@@ -220,8 +220,7 @@ const UTILS = {
     return result;
   }
 };
-
-// PWA Service Worker 등록
+/* PWA Service Worker 등록 (아직 준비안되어 주석처리)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -229,3 +228,4 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.log('SW Registration Failed', err));
   });
 }
+*/
