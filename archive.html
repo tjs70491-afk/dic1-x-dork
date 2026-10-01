@@ -1417,7 +1417,7 @@
             const encodedPayload = encodeURIComponent(jsonString);
 
             // GET 방식으로 전송
-            const response = await UTILS.apiFetch(`${targetUrl}?action=addManualList&carinfo=${encodedPayload}`);
+            const response = await UTILS.apiFetch(`${CONFIG.WORKER_URL}?action=addManualList&carinfo=${encodedPayload}`);
             const result = await response.json();
 
             if (result.status !== "success") {
