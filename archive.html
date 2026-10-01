@@ -1384,32 +1384,66 @@
         if (cardPayloads.length === 0) return alert("추가할 차량 데이터가 없습니다.");
 
         UTILS.showLoading("🚚 차량 추가 중...", "서버에 반영 중입니다.");
-      
-        const targetUrl = CONFIG.WORKER_URL;
-        UTILS.apiFetch(`${targetUrl}?action=addManualList`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cardPayloads: cardPayloads })
-        })
-        .then(res => res.json())
-        .then(result => {
-          UTILS.hideLoading();
-          if (result.status === "success") {
-            UTILS.showToast(`✅ ${result.message}`);
-            
-            // 모달 즉시 닫기
-            document.getElementById('cardContainer').innerHTML = '';
-            document.getElementById('addCardModal').style.display = 'none';
-            
-            fetchData(false);
-          } else {
-            alert("추가 실패: " + result.message);
+
+        const CHUNK_SIZE = 20;
+        const chunkBatches = [];
+
+        cardPayloads.forEach(card => {
+          for (let i = 0; i < card.vehicles.length; i += CHUNK_SIZE) {
+            chunkBatches.push([{
+              wave: card.wave,
+              parentId: card.parentId,
+              hasPhoto: (i === 0) ? card.hasPhoto : false, // 첫 묶음에만 사진 매핑
+              vehicles: card.vehicles.slice(i, i + CHUNK_SIZE)
+            }]);
           }
-        })
-        .catch(err => {
-          UTILS.hideLoading();
-          alert("통신 에러 발생. 잠시 후 다시 시도해 주세요.")
         });
+
+        const totalBatches = chunkBatches.length;
+
+        try {
+          // 3. 순차적으로 0.3초 간격을 두고 전송
+          for (let i = 0; i < totalBatches; i++) {
+            const batch = chunkBatches[i];
+            const currentStep = i + 1;
+            
+            // 로딩 상태 메시지 업데이트
+            UTILS.showLoading(
+              `🚚 차량 추가 중... (${currentStep}/${totalBatches})`,
+              `서버에 데이터 전송 중입니다. 잠시만 기다려주세요.`
+            );
+
+            const jsonString = JSON.stringify(batch);
+            const encodedPayload = encodeURIComponent(jsonString);
+
+            // GET 방식으로 전송
+            const response = await UTILS.apiFetch(`${targetUrl}?action=addManualList&carinfo=${encodedPayload}`);
+            const result = await response.json();
+
+            if (result.status !== "success") {
+              throw new Error(result.message || "서버 저장 실패");
+            }
+
+            // 서버 및 DB 과부하 방지 텀 (0.3초 대기)
+            if (i < totalBatches - 1) {
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
+
+          // 모든 배치 전송 완료
+          UTILS.hideLoading();
+          UTILS.showToast(`✅ 모든 차량이 성공적으로 추가되었습니다!`);
+
+          // 모달 초기화 및 닫기
+          document.getElementById('cardContainer').innerHTML = '';
+          document.getElementById('addCardModal').style.display = 'none';
+          
+          fetchData(false);
+
+        } catch (err) {
+          UTILS.hideLoading();
+          alert(`전송 중 오류가 발생했습니다: ${err.message}`);
+        }
       }
 
       function applyQuickFilter(keyword) {
