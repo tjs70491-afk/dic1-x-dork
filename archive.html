@@ -1390,12 +1390,12 @@
 
         cardPayloads.forEach(card => {
           for (let i = 0; i < card.vehicles.length; i += CHUNK_SIZE) {
-            chunkBatches.push([{
+            chunkBatches.push({
               wave: card.wave,
               parentId: card.parentId,
-              hasPhoto: (i === 0) ? card.hasPhoto : false, // 첫 묶음에만 사진 매핑
+              hasPhoto: (i === 0) ? card.hasPhoto : false,
               vehicles: card.vehicles.slice(i, i + CHUNK_SIZE)
-            }]);
+            });
           }
         });
 
