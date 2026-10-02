@@ -1,0 +1,150 @@
+body.dashboard-body {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-header h1 {
+  font-size: clamp(32px, 4vh, 50px);
+}
+
+.dashboard-header .status-text {
+  font-size: clamp(16px, 2vh, 25px);
+  padding: 5px 15px;
+}
+
+.main-container {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.left-panel {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.right-panel {
+  flex: 1.5;
+  min-width: 300px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.right-panel .card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.card h2 {
+  margin-top: 0;
+  color: #202124;
+  font-size: clamp(20px, 3vh, 40px);
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+/* 좌측 상단 남은 대수 거대 박스 */
+.huge-remaining-box {
+  text-align: center;
+  padding: clamp(10px, 2vh, 20px) 0;
+  flex-shrink: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+}
+.huge-title {
+  font-size: clamp(20px, 3vh, 40px);
+  font-weight: bold;
+}
+.huge-number {
+  font-size: clamp(100px, 20vh, 200px);
+  font-weight: 900;
+  line-height: 0.8;
+  flex-shrink: 0;
+}
+.huge-desc {
+  font-size: clamp(16px, 2vh, 25px);
+  color: #666;
+}
+.type-inner {
+  font-size: clamp(20px, 4vh, 40px);
+  font-weight: bold;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+/* 진행률 프로그레스 바 */
+.progress-item { margin-bottom: 20px; }
+.progress-item:last-child { margin-bottom: 0; }
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: clamp(20px, 3vh, 40px);
+}
+.progress-track {
+  background: #e0e0e0;
+  border-radius: 10px;
+  height: 18px;
+  width: 100%;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 10px;
+  transition: width 0.8s ease-in-out;
+}
+
+/* 대기 목록 더보기 / 접기 커스텀 리스트 아이템 */
+.list-item.open-extra-btn,
+.list-item.close-extra-btn {
+  justify-content: center;
+  background: #e8eaed;
+  cursor: pointer;
+}
+.list-item.open-extra-btn:hover,
+.list-item.close-extra-btn:hover {
+  background: #dadce0;
+}
+.list-item.open-extra-btn .car-info,
+.list-item.close-extra-btn .car-info {
+  text-align: center;
+  flex-basis: 100%;
+  max-width: 100%;
+  font-weight: bold;
+  color: #70757a;
+}
+.list-item.open-extra-btn .car-info {
+  color: #3c4043;
+}
+.list-item.open-extra-btn:hover .car-info::after {
+  content: " ▼ 목록 더 보기";
+  color: #70757a;
+  font-size: 0.85em;
+  font-weight: normal;
+}
+
+/* 모바일 전용 오버라이드 */
+@media (max-width: 768px) {
+  body.dashboard-body {
+    height: auto;
+    overflow: auto;
+  }
+  .right-panel .card {
+    min-height: auto;
+  }
+}
