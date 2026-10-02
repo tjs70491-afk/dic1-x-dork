@@ -43,10 +43,10 @@ export function escapeHtml(str) {
 }
 
 export function getAuthKey() {
-  let key = this.getParamFromUrl('key');
+  let key = getParamFromUrl('key');
 
   if (key) {
-    this.setAuthKey(key);
+    setAuthKey(key);
     const cleanUrl = window.location.pathname;
     window.history.replaceState({}, document.title, cleanUrl);
     return key;
