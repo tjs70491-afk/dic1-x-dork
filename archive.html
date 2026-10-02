@@ -2,7 +2,7 @@
 <html>
   <head>
     <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 
     <link rel="preload" href="./fonts/PretendardGOV-Bold.woff2" as="font" type="font/woff2" crossorigin />
     
@@ -1205,7 +1205,7 @@
         // 3. 사진이나 데이터가 1개라도 있다면 삭제 전 사용자 확인(되묻기)
         if (hasPhoto || hasData) {
           const confirmDelete = confirm(
-            "⚠️ 이 카드에 이미 분석된 사진이나 입력된 데이터가 있습니다.\n정말 이 카드를 삭제하시겠습니까?\n(AI 분석 비용이 소모된 상태입니다.)"
+            "⚠️ 이 카드에 이미 분석된 사진이나 입력된 데이터가 있습니다.\n정말 이 카드를 삭제하시겠습니까?"
           );
           if (!confirmDelete) return; // 취소 누르면 삭제 중단
         }
@@ -1251,24 +1251,63 @@
       
       function handleCardRowPaste(e, cardId, currentInput) {
         const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+        
         if (pasteData.includes('\t') || pasteData.includes('\n')) {
           e.preventDefault();
-          const lines = pasteData.split('\n').filter(line => line.trim() !== '');
+          
+          const lines = pasteData.split(/\r?\n/).filter(line => line !== '');
           const currentRow = currentInput.closest('.card-data-row');
           
-          lines.forEach((line, index) => {
-            const parts = line.trim().split(/[\t ]+/);
-            const hub = parts[0] || "";
-            const carNum = parts[1] || "";
-      
-            if (index === 0) {
+          let isFirstRowProcessed = false;
+          
+          lines.forEach((line) => {
+            const parts = line.split('\t');
+            
+            // 모든 공백(문자열 내부 포함)을 완전히 제거합니다.
+            const hub = parts[0] ? parts[0].replace(/\s+/g, "") : "";
+            let carNum = parts[1] ? parts[1].replace(/\s+/g, "") : "";
+
+            // 허브가 빈값이면 건너뜁니다.
+            if (hub === "") return; 
+
+            // 차량번호 필터링 규칙 적용
+            carNum = parseCarNumber(carNum);
+
+            if (!isFirstRowProcessed) {
               const hubSelect = currentRow.querySelector('.row-hub-select');
               hubSelect.innerHTML = generateHubOptions(hub);
               currentRow.querySelector('.row-carnum-input').value = carNum;
+              isFirstRowProcessed = true;
             } else {
               addCardRow(cardId, hub, carNum);
             }
           });
+        }
+      }
+
+      /**
+       * 차량번호를 규칙에 맞게 변환하는 헬퍼 함수
+       */
+      function parseCarNumber(rawCarNum) {
+        // 1. 정상 차량번호 양식 검사 정규식 (예: 12가3456, 123가3456, 서울12가3456 등)
+        // 외교, 배 등 특수 번호판까지 포괄하는 한국 표준 차량번호 정규식입니다.
+        const fullCarNumRegex = /^(?:\d{2,3}|[가-힣]{1,2}\d{2})[가-힣]\d{4}$/;
+
+        // 2. 정확히 숫자 4자리만 있는지 검사하는 정규식
+        const lastFourRegex = /^\d{4}$/;
+
+        if (fullCarNumRegex.test(rawCarNum)) {
+          // 규칙 1: 전체 차량번호 양식에 맞다면 그대로 반환
+          return rawCarNum;
+        } else if (lastFourRegex.test(rawCarNum)) {
+          // 규칙 2: 정확히 뒷 4자리 숫자만 들어왔다면 그대로 반환
+          return rawCarNum;
+        } else if (rawCarNum.length > 4 && /\d{4}$/.test(rawCarNum)) {
+          // (선택 규칙) 만약 "오전배차1234"처럼 텍스트 뒤에 4자리가 붙어있는 경우, 뒷 4자리만 추출하고 싶다면 활성화
+          return rawCarNum.slice(-4);
+        } else {
+          // 규칙 3: 미배차, 배차예정, 공백 및 기타 텍스트는 전부 공백 처리
+          return "";
         }
       }
       

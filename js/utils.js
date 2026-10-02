@@ -1,4 +1,4 @@
-import { CONFIG } from './js/config.js';
+import { CONFIG } from './config.js';
 
 // 내부 타이머 관리 변수
 const toastTimers = {

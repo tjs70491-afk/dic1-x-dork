@@ -3,6 +3,7 @@ body.dashboard-body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding: 12px 6px; 
 }
 
 .dashboard-header h1 {
@@ -143,6 +144,7 @@ body.dashboard-body {
   body.dashboard-body {
     height: auto;
     overflow: auto;
+    padding: 12px 2px; 
   }
   .right-panel .card {
     min-height: auto;

@@ -1,4 +1,4 @@
-import { CONFIG } from './js/config.js';
+import { CONFIG } from './config.js';
 import { 
   getAuthKey, 
   getUserType, 
@@ -8,7 +8,7 @@ import {
   getTypeClassStr, 
   escapeHtml, 
   registerServiceWorker 
-} from './js/utils.js';
+} from './utils.js';
 
 const state = {
   appKey: null,
