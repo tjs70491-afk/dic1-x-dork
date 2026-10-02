@@ -511,6 +511,9 @@ export function markAsArrived(cId, btnElement) {
   target.arr = !prevArr;
   target.aTime = target.arr ? Date.now() : 0;
 
+  localStorage.setItem("CACHED_DATA", JSON.stringify(currentChecklistData));
+  updateUI(currentChecklistData);
+
   if (navigator.vibrate) navigator.vibrate(25);
 
   stopSyncInterval();
@@ -571,6 +574,9 @@ function stopSyncInterval() {
 }
 
 function fetchData(useCache = true) {
+
+  if (pendingRequests > 0) return;
+
   document.getElementById('status-msg').innerText = "데이터 동기화 중...";
 
   if (useCache) {
@@ -590,6 +596,7 @@ function fetchData(useCache = true) {
         document.getElementById('status-msg').innerText = "❌ 인증 오류: " + result.message;
         return;
       }
+      if (pendingRequests > 0) return;
       currentChecklistData = result.data || [];
       localStorage.setItem("CACHED_DATA", JSON.stringify(currentChecklistData));
       updateUI(currentChecklistData);
@@ -600,7 +607,6 @@ function fetchData(useCache = true) {
 }
 
 export function updateUI(data) {
-  if (pendingRequests > 0) return; 
 
   document.getElementById('status-msg').innerText = "✅ 마지막 업데이트: " + getCurrentTimeStr();
 
