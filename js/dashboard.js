@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { 
-  apiFetch, getCurrentTimeStr, calculateSummary, 
+  apiFetch, getCurrentTimeStr, calculateSummary, setStatusMessage,
   getHubDisplayName, getTypeClassStr, escapeHtml, registerServiceWorker 
 } from './utils.js';
 
