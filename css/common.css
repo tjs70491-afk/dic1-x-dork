@@ -39,7 +39,7 @@ h1 { margin: 0; font-size: clamp(22px, 3vh, 32px); color: #1a73e8; }
 .close-x, .close-btn { font-size: 24px; color: #aaa; cursor: pointer; border: none; background: none; font-weight: bold; position: absolute; right: 20px; top: 15px; }
 @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* -- 리스트 아이템 공통 -- */
+/* [공통] 리스트 아이템 공통 */
 .list-container { flex: 1; overflow-x: auto; overflow-y: visible; padding-bottom: 5px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .list-container::-webkit-scrollbar { display: none; }
 .list-inner { display: inline-flex; flex-direction: column; min-width: 100%; gap: 12px; }
@@ -55,7 +55,7 @@ h1 { margin: 0; font-size: clamp(22px, 3vh, 32px); color: #1a73e8; }
 .car-info.changed { color: #e65100; font-style: italic; }
 .text-unloaded, .text-unloaded small, .list-item.unloaded .car-info { color: #9aa0a6; text-decoration: line-through; }
 
-/* -- 분류 뱃지 (타입) -- */
+/* [공통] 분류 뱃지 */
 .type { flex-basis: 10%; max-width: 10%; font-size: clamp(18px, 2.5vh, 35px); font-weight: bold; flex-shrink: 0; display: inline-flex; justify-content: center; }
 .type small { display: inline-block; padding: 6px 14px; box-sizing: border-box; }
 .type.sioc small { background: #C19A6C; color: #1A130B; border: 2px solid #3A2E2B; }
@@ -63,14 +63,14 @@ h1 { margin: 0; font-size: clamp(22px, 3vh, 32px); color: #1a73e8; }
 .type.fresh small { background: #1E3264; color: white; border-radius: 5px; border: 4px solid #0E6641; }
 .type.irr small { background: rgba(0,0,0,0.08); color: #1f2937; border-radius: 999px; border: 1px solid rgba(0,0,0,0.1); }
 
-/* -- 상태 뱃지 (진행상황) -- */
+/* [대시보드/아카이브] 상태 뱃지 */
 .badge { flex-basis: 10%; max-width: 10%; font-size: clamp(18px, 2.5vh, 35px); font-weight: bold; flex-shrink: 0; display: inline-flex; justify-content: center; }
 .badge small { display: inline-block; border-radius: 12px; padding: 6px 14px; box-sizing: border-box; }
 .badge.unloaded small { background: #d6e4da; color: #137333; }
 .badge.waiting small { background: #eee7d0; color: #b06000; }
 .badge.not-arrived small { background: #f2f4f5; color: #5f6368; }
 
-/* 공통 아이콘 액션 버튼 (카메라, 폴더, 수정, 삭제 등) */
+/* [아카이브/체크리스트] 공통 아이콘 액션 버튼 (카메라, 폴더, 수정, 삭제 등) */
 .btn-icon-action {
   background: transparent;
   border: none;
@@ -92,7 +92,7 @@ h1 { margin: 0; font-size: clamp(22px, 3vh, 32px); color: #1a73e8; }
   background-color: rgba(0,0,0,0.05);
 }
 
-/* -- 차량 수동 추가 카드 UI -- */
+/* [대시보드/아카이브] 차량 수동 추가 카드 UI */
 .card-scroll-container { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 12px; padding-bottom: 10px; flex: 1; align-items: flex-start; }
 .add-card { flex: 0 0 120px; display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #cbd5e1; padding: 10px; border-radius: 12px; transition: all 0.4s ease-out; }
 .add-card.is-deleting { opacity: 0; flex: 0 0 0px; width: 0px; padding: 0; margin: 0; overflow: hidden; }
@@ -111,7 +111,7 @@ h1 { margin: 0; font-size: clamp(22px, 3vh, 32px); color: #1a73e8; }
 .btn-add-row { background: #f8fafc; border: 1px dashed #64748b; color: #334155; border-radius: 6px; padding: 5px; font-size: 12px; font-weight: bold; cursor: pointer; }
 .btn-add-card { flex: 0 0 90px; height: 364px; border: 2px solid #334155; border-radius: 10px; background: #cbd5e1; font-size: 36px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
 
-/* -- 검색결과 없음 -- */
+/* [대시보드/체크리스트] 검색결과 없음 */
 .empty-list-msg {
   text-align: center;
   color: #888;
@@ -119,6 +119,20 @@ h1 { margin: 0; font-size: clamp(22px, 3vh, 32px); color: #1a73e8; }
   width: 100%;
   font-size: 14px;
 }
+
+/* [대시보드/아카이브] 남은 대수 표시판 */
+.huge-remaining-box { text-align: center; padding: clamp(10px, 2vh, 20px) 0; flex-shrink: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+.huge-title { font-size: clamp(20px, 3vh, 40px); font-weight: bold; }
+.huge-number { font-size: clamp(100px, 20vh, 200px); font-weight: 900; line-height: 0.8; flex-shrink: 0; }
+.huge-desc { font-size: clamp(16px, 2vh, 25px); color: #666; }
+.type-inner { font-size: clamp(20px, 4vh, 40px); font-weight: bold; display: flex; flex-direction: row; justify-content: space-evenly; align-items: center; }
+
+/* [대시보드/아카이브] 진행률 프로그레스 바 */
+.progress-item { margin-bottom: 20px; }
+.progress-item:last-child { margin-bottom: 0; }
+.progress-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; font-size: clamp(20px, 3vh, 40px); }
+.progress-track { background: #e0e0e0; border-radius: 10px; height: 18px; width: 100%; overflow: hidden; }
+.progress-fill { height: 100%; width: 0%; border-radius: 10px; transition: width 0.8s ease-in-out; }
 
 /* -- 모바일 용 -- */
 @media (max-width: 768px) {
@@ -132,7 +146,7 @@ h1 { margin: 0; font-size: clamp(22px, 3vh, 32px); color: #1a73e8; }
   .list-container { overflow-y: visible; }
   .list-item { padding: 12px 8px; }
   
-  /* 모바일에서 불필요한 데스크톱 뱃지 숨김 (대시보드/아카이브) */
+  /* [대시보드/아카이브] 뱃지 숨김 */
   .type, .badge { display: none; }
   .car-info { font-size: clamp(18px, 4.6vw, 26px); margin: 0 4px; }
 }

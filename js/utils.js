@@ -121,52 +121,63 @@ export function showToast({ message, duration, position = 'bottom'}) {
 }
 
 export function showLoading(msg, subMsg = "잠시만 기다려주세요...") {
-  const overlay = document.getElementById('uploadOverlay');
-  if (!overlay) return;
-  document.getElementById('uploadOverlayMsg').innerText = msg;
-  document.getElementById('uploadOverlaySub').innerText = subMsg;
-  overlay.style.display = 'flex';
+  let overlay = document.querySelector('#uploadOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'uploadOverlay';
+    overlay.className = 'modal-overlay';
+    // HTML 예시 구조와 동일하게 기본 스타일 및 스피너를 세팅합니다.
+    overlay.style.cssText = 'z-index: 10001; flex-direction: column; background: rgba(0,0,0,0.75); display: flex;';
+    
+    overlay.innerHTML = `
+      <div class="spinner-mini" style="width: 40px; height: 40px; border-width: 4px; margin-bottom: 16px;"></div>
+      <div id="uploadOverlayMsg" style="font-size: 20px; font-weight: bold; margin-bottom: 8px; color: white;"></div>
+      <div id="uploadOverlaySub" style="font-size: 14px; color: #cbd5e1;"></div>
+    `;
+    document.body.appendChild(overlay);
+  }
+  overlay.querySelector('#uploadOverlayMsg').innerText = msg;
+  overlay.querySelector('#uploadOverlaySub').innerText = subMsg;
+  overlay.classList.add('active');
 }
 
 export function hideLoading() {
   const overlay = document.getElementById('uploadOverlay');
-  if (overlay) overlay.style.display = 'none';
+  if (overlay) overlay.classList.remove('active');
 }
 
+// todo: 1W 클러스터와 2W SF부천3을 구분하는 로직이 필요함. 현재는 1W SF부천3와 2W 클러스터만 구분하고 있음
 export function calculateSummary(sheetData) {
-  const isNotBucheon = (hub) => !String(hub).includes("부천3");
 
   return sheetData.reduce((acc, item) => {
     const { wave, hub, isUnloaded, type } = item;
 
-    if (wave === "1W" && isNotBucheon(hub)) {
-      acc.max1WLength++;
-      if (isUnloaded) acc.unloaded1WLength++;
-      else {
-        if (/신선/.test(type)) acc.freshCount1W++;
-        if (/PB|복합/.test(type)) acc.pbCount1W++;
-        if (/SIOC|이형/.test(type)) acc.ectCount1W++;
+    if (wave === "1W") {
+      if (hub !== "SF부천3") {
+        acc.max1WLength++;
+        if (isUnloaded) acc.unloaded1WLength++;
+        else {
+          if (/신선/.test(type)) acc.freshCount1W++;
+          if (/PB|복합/.test(type)) acc.pbCount1W++;
+          if (/SIOC|이형/.test(type)) acc.ectCount1W++;
+        } 
+      } else if (hub === "SF부천3") {
+        acc.maxPicosLength++;
+        if (isUnloaded) acc.unloadedPicosLength++;
       }
-    }
-
-    if (wave === "2W" && isNotBucheon(hub)) {
-      acc.max2WLength++;
-      if (isUnloaded) acc.unloaded2WLength++;
-      else {
-        if (/SIOC|복합|신선/.test(type)) acc.siocCount2W++;
-        if (/PB/.test(type)) acc.pbCount2W++;
-        if (/이형/.test(type)) acc.irrCount2W++;
+    } else if (wave === "2W") {
+      if (hub !== "부천3") {
+        acc.max2WLength++;
+        if (isUnloaded) acc.unloaded2WLength++;
+        else {
+          if (/SIOC|복합|신선/.test(type)) acc.siocCount2W++;
+          if (/PB/.test(type)) acc.pbCount2W++;
+          if (/이형/.test(type)) acc.irrCount2W++;
+        }
+      } else if (hub === "부천3") {
+        acc.maxClustersLength++;
+        if (isUnloaded) acc.unloadedClustersLength++;
       }
-    }
-
-    if (hub === "SF부천3") {
-      acc.maxPicosLength++;
-      if (isUnloaded) acc.unloadedPicosLength++;
-    }
-
-    if (hub === "부천3") {
-      acc.maxClustersLength++;
-      if (isUnloaded) acc.unloadedClustersLength++;
     }
 
     return acc;
@@ -204,4 +215,114 @@ export function registerServiceWorker() {
         .catch(err => console.error('SW Registration Failed', err));
     });
   }
+}
+
+export function parseCarNumber(rawCarNum) {
+  if (!rawCarNum) return "";
+  const cleaned = String(rawCarNum).replace(/\s+/g, "");
+
+  // 1. 표준 완성형 번호판 (예: 12가3456, 123가3456, 경기80바6311)
+  const fullCarNumRegex = /^(?:\d{2,3}|[가-힣]{1,2}\d{2})[가-힣]\d{4}$/;
+  // 2. 뒷 4자리 숫자
+  const lastFourRegex = /^\d{4}$/;
+
+  if (fullCarNumRegex.test(cleaned)) return cleaned;
+  if (lastFourRegex.test(cleaned)) return cleaned;
+  if (cleaned.length > 4 && /\d{4}$/.test(cleaned)) return cleaned.slice(-4);
+  
+  // 미배차, 배차예정 등 유효하지 않은 문자열은 공백 반환
+  return "";
+}
+
+export async function submitCardData() {
+  const cards = document.querySelectorAll('.add-card');
+  const cardPayloads = [];
+
+  cards.forEach(card => {
+    const serverImageId = card.dataset.imageId;
+    const parentId = serverImageId || generateUniqueID();
+    const wave = card.querySelector('.wave-select').value;
+    const rows = card.querySelectorAll('.card-data-row');
+    const vehicles = [];
+
+    rows.forEach(row => {
+      let hub = row.querySelector('.row-hub-select').value;
+      const carNum = row.querySelector('.row-carnum-input').value.trim();
+      if (hub === "직접선택") hub = "";
+      if (hub !== "") vehicles.push({ hub, carNum });
+    });
+
+    if (vehicles.length > 0) {
+      cardPayloads.push({ wave, parentId, hasPhoto: Boolean(serverImageId), vehicles });
+    }
+  });
+
+  if (cardPayloads.length === 0) return alert("추가할 차량 데이터가 없습니다.");
+
+  showLoading("🚚 차량 추가 중...", "서버에 차량을 등록 중입니다.");
+
+  // [보안 우회 통일] 20개 단위 Chunk 분할 및 0.3초 지연 GET 전송
+  const CHUNK_SIZE = 20;
+  const chunkBatches = [];
+
+  cardPayloads.forEach(card => {
+    for (let i = 0; i < card.vehicles.length; i += CHUNK_SIZE) {
+      chunkBatches.push({
+        wave: card.wave,
+        parentId: card.parentId,
+        hasPhoto: (i === 0) ? card.hasPhoto : false,
+        vehicles: card.vehicles.slice(i, i + CHUNK_SIZE)
+      });
+    }
+  });
+
+  const totalBatches = chunkBatches.length;
+
+  try {
+    for (let i = 0; i < totalBatches; i++) {
+      const batch = chunkBatches[i];
+      showLoading(`🚚 차량 추가 중... (${i + 1}/${totalBatches})`, `서버에 데이터 전송 중입니다.`);
+
+      const encodedPayload = encodeURIComponent(JSON.stringify([batch]));
+      const response = await apiFetch(`${CONFIG.WORKER_URL}?action=addManualList&carinfo=${encodedPayload}`);
+      const result = await response.json();
+
+      if (result.status !== "success") throw new Error(result.message || "서버 저장 실패");
+
+      if (i < totalBatches - 1) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+
+    hideLoading();
+    showToast("✅ 모든 차량이 성공적으로 추가되었습니다!");
+    document.getElementById('cardContainer').innerHTML = '';
+    document.getElementById('addCardModal').classList.remove('active');
+    fetchData(false);
+
+  } catch (err) {
+    hideLoading();
+    alert(`추가 실패: ${err.message}`);
+  }
+}
+
+// 차량 추가/수정 모달에서 허브 선택 옵션 생성
+export function generateHubOptions(selectedHub = "") {
+    let isMatched = false;
+    let optionsHtml = CONFIG.HUB_LIST.map(hub => {
+        const isSelected = (hub === selectedHub);
+        if (isSelected) isMatched = true;
+        return `<option value="${hub}" ${isSelected ? 'selected' : ''}>${hub}</option>`;
+    }).join('');
+
+    if (selectedHub && !isMatched && selectedHub !== "직접선택") {
+        optionsHtml = `<option value="${selectedHub}" selected>${selectedHub}</option>` + optionsHtml;
+    }
+    return optionsHtml;
+}
+
+export function setStatusMessage(msg) {
+  const el = document.getElementById('status-msg');
+  if (!el) return;
+  el.innerText = msg;
 }
