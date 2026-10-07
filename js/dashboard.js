@@ -199,14 +199,8 @@ async function requestWakeLock() {
    5. Init (앱 초기화)
 ============================================================ */
 export function initDashboard() {
-  // state.appKey = getAuthKey();
-  state.userType = getUserType();
 
-  if (!state.appKey) {
-    alert("인증 정보가 없습니다. 다시 로그인해주세요.");
-    window.location.replace("index.html");
-    return;
-  }
+  state.userType = getUserType();
 
   // registerServiceWorker();
   setupEventListeners(); // 이벤트 위임 셋업
