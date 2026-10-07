@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { 
-  getAuthKey, getUserType, getCurrentTimeStr, calculateSummary, 
+  apiFetch, getCurrentTimeStr, calculateSummary, 
   getHubDisplayName, getTypeClassStr, escapeHtml, registerServiceWorker 
 } from './utils.js';
 
@@ -9,7 +9,6 @@ import {
    - 앱이 현재 가지고 있는 "순수 데이터"만 보관합니다.
 ============================================================ */
 const state = {
-  userType: 'guest',
   wakeLock: null, // 화면 꺼짐 방지 관리 변수
   syncInterval: null, // 폴링 타이머 저장 변수
   isListExpanded: false, // 목록 더보기 상태
@@ -46,10 +45,9 @@ function stopSyncInterval() {
 function fetchData() {
   setStatusMessage("데이터 동기화 중...");
   
-  // const targetUrl = CONFIG.BACKEND === "WORKER" ? CONFIG.WORKER_URL : CONFIG.GAS_URL;
   const url = `${CONFIG.WORKER_URL}?action=getDashboard`;
 
-  fetch(url)
+  apiFetch(url)
     .then(response => response.json())
     .then(result => {
       if (result.status === "error") {
@@ -199,8 +197,6 @@ async function requestWakeLock() {
    5. Init (앱 초기화)
 ============================================================ */
 export function initDashboard() {
-
-  state.userType = getUserType();
 
   // registerServiceWorker();
   setupEventListeners(); // 이벤트 위임 셋업
