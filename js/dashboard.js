@@ -113,6 +113,7 @@ function renderList() {
     return;
   }
 
+  // TODO : 미하차 차량 표시여부 검토
   const pendingList = state.vehicles.filter(item => item.isArrival && !item.isUnloaded);
 
   if (pendingList.length === 0) {
@@ -132,8 +133,10 @@ function renderList() {
   let html = `<div class="list-inner">`;
   
   displayCars.forEach(item => {
-    const prefix = (item.wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(item.hub) ? "◇" : "");
-    const carInfo = escapeHtml(`${prefix}${getHubDisplayName(item.hub)} | ${item.carNumber}`);
+    const prefix1 = (item.hasFile === true || String(item.hasFile).toUpperCase() === "TRUE") ? "🖼️" : "";
+    const prefix2 = (item.wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(item.hub) ? "◇" : "");
+    
+    const carInfo = escapeHtml(`${prefix1}${prefix2}${getHubDisplayName(item.hub)} | ${item.carNumber}`);
     
     html += `
       <div class="list-item waiting">
