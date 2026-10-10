@@ -80,9 +80,6 @@ export function setupEvents() {
             };
             endpoint = `${CONFIG.WORKER_URL}?action=editVehicle&carinfo=${encodeURIComponent(JSON.stringify(payload))}`;
         }
-        else if (action === 'submit-del') {
-            endpoint = `${CONFIG.WORKER_URL}?action=deleteVehicle&carId=${encodeURIComponent(state.carInfo.carId)}`;
-        }
 
         if (endpoint) {
             showLoading("⏳ 처리 중...", "서버에 반영 중입니다.");
@@ -126,9 +123,6 @@ export function openSingleCarManager() {
     } else if (state.mode === "edit") {
         title = '✏️ 차량 수정';
         submitBtn = `<button type="button" class="btn-submit" data-action="submit-edit">수정하기</button>`;
-    } else if (state.mode === "delete") {
-        title = '🗑️ 차량 삭제';
-        submitBtn = `<button type="button" class="btn-submit del" data-action="submit-del">삭제하기</button>`;
     }
 
     modal.innerHTML = `
@@ -151,7 +145,7 @@ export function openSingleCarManager() {
 
             <div class="form-group">
                 <label>차량번호</label>
-                <input type="text" id="inputCarNum" placeholder="차량번호 (예: 경기80바6311)" ${state.mode === "delete" ? 'readonly' : ''} value="${state.carInfo.carNum}">
+                <input type="text" id="inputCarNum" placeholder="차량번호 (예: 경기80바6311)" ${state.mode === "delete" ? 'readonly' : ''} value="${state.carInfo.carNumber || ""}">
             </div>
 
             ${(state.isUnloaded) 
@@ -165,8 +159,6 @@ export function openSingleCarManager() {
                     <input type="number" id="edit-rt" name="RT수" min="0" max="20" value="${state.carInfo.rt}">
                 </div>
                 ` : ''}
-            
-            ${state.mode === "delete" ? `<p>⚠️ 정말 차량을 삭제할까요?\n이 작업은 복구할 수 없습니다.</p>` : ''}
 
             <div class="edit-modal-btns">
                 ${submitBtn}

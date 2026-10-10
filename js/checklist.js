@@ -245,6 +245,21 @@ export function renderList() {
         }
     });
 
+    // 서버데이터 가져오기 전 임시용 정렬
+    const getPriority = item => {
+        if (item.isUnloaded) return 3;
+        if (item.isArrival) return 2;
+        return 1;
+    };
+    uniqueData.sort((a, b) => {
+        const pA = getPriority(a);
+        const pB = getPriority(b);
+        if (pA !== pB) return pA - pB;
+        // 동일 상태 내에서는 1W 우선
+        if (a.wave !== b.wave) return a.wave.localeCompare(b.wave);
+        return 0;
+    });
+
     const listItemsHTML = [];
     uniqueData.forEach(item => {
         const { carId, hub, carNumber, isArrival, isUnloaded, isChanged, wave } = item;
