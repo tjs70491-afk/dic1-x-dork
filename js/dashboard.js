@@ -45,7 +45,7 @@ function stopSyncInterval() {
 function fetchData() {
   setStatusMessage("데이터 동기화 중...");
   
-  const url = `${CONFIG.WORKER_URL}?action=getDashboard`;
+  const url = `${CONFIG.WORKER_URL}?action=getVehicles`;
 
   apiFetch(url)
     .then(response => response.json())
