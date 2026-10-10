@@ -228,6 +228,35 @@ export function renderList() {
         return;
     }
 
+        const seenActiveCars = new Map();
+        const uniqueData = [];
+  
+        searchingResult.forEach(item => {
+          if (item.isUnloaded) {
+            // 하차 완료된 차량은 중복 여부 상관없이 모두 추가
+            uniqueData.push(item);
+          } else {
+            // 대기중 / 미도착 차량 중복 제거
+            const safeCarNum = String(item.carNumber).replace(/\s+/g, '');
+            const uniqueKey = `${item.hub}_${item.wave}_${safeCarNum}`;
+  
+            if (!seenActiveCars.has(uniqueKey)) {
+              seenActiveCars.set(uniqueKey, item); // 처음 본 차량이면 저장
+            } else {
+              const existing = seenActiveCars.get(uniqueKey);
+              // 기존 저장된 차가 '미도착'인데, 지금 검사하는 차가 '대기중'이면 덮어씌움 (대기중 우선)
+              if (!existing.isArrival && item.isArrival) {
+                seenActiveCars.set(uniqueKey, item);
+              }
+            }
+          }
+        });
+  
+        // Map에 걸러진 1개의 고유 대기/미도착 차량들을 배열에 합침
+        seenActiveCars.forEach(value => {
+          uniqueData.push(value);
+        });
+/*
     // 한 웨이브동안 동일허브에서 오는 동일차량 처리 로직: 하차완료 차량은 전부 표시, 미하차 차량은 항목 1개로 축약
     const seenActiveCars = new Set();
     const uniqueData = [];
@@ -244,7 +273,7 @@ export function renderList() {
             }
         }
     });
-
+*/
     // 서버데이터 가져오기 전 임시용 정렬
     const getPriority = item => {
         if (item.isUnloaded) return 3;
