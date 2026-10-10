@@ -101,13 +101,6 @@ export function setupEvents() {
                 });
         }
     });
-
-    // [모달 내 변경 이벤트]
-    modal.addEventListener('change', (e) => {
-        if (e.target.matches('#inputWave')) state.carInfo.wave = e.target.value;
-        if (e.target.matches('#inputHub')) state.carInfo.hub = e.target.value;
-        if (e.target.matches('#inputCarNum')) state.carInfo.carNum = e.target.value.trim();
-    });
 }
 
 export function openSingleCarManager() {
