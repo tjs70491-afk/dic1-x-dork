@@ -133,21 +133,34 @@ function renderList() {
   let html = `<div class="list-inner">`;
   
   displayCars.forEach(item => {
+
+    const hasPhoto = (item.hasFile === true || String(item.hasFile).toUpperCase() === "TRUE");
+    const needPhoto = (item.needPhoto === true || String(item.needPhoto).toUpperCase() === "TRUE");
+    
+    // 사진 필수인데 없는 경우 판별
+    const isMissingPhoto = needPhoto && !hasPhoto;
+
     const prefix1 = (item.hasFile === true || String(item.hasFile).toUpperCase() === "TRUE") ? "🖼️" : "";
     const prefix2 = (item.wave === "1W") ? "★" : (CONFIG.FRESH_HUBS.has(item.hub) ? "◇" : "");
     
     const carInfo = escapeHtml(`${prefix1}${prefix2}${getHubDisplayName(item.hub)} | ${item.carNumber}`);
+
+    const extraClass = isMissingPhoto ? "missing-photo" : "";
+    const warningBadge = isMissingPhoto ? `<span class="photo-warning-badge blink">📸촬영요망</span>` : "";
     
     html += `
-      <div class="list-item waiting">
+      <div class="list-item waiting ${extraClass}">
         <span class="type ${getTypeClassStr(item.type)}"><small>${escapeHtml(item.type)}</small></span>
-        <span class="car-info"><small>${carInfo}</small></span>
+        <span class="car-info">
+          <small>${carInfo}</small>
+          ${warningBadge}
+        </span>
       </div>`;
   });
 
   if (!isMobile && pendingList.length > displayLimit) {
     const remainingCount = pendingList.length - displayLimit;
-    // data-action 속성을 부여 (이벤트 위임용)
+
     html += `
       <div class="list-item ${state.isListExpanded ? 'close-extra-btn' : 'open-extra-btn'}" data-action="toggle-list">
         <span class="car-info">

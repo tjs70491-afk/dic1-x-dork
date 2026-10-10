@@ -82,6 +82,40 @@ body.dashboard-body {
   font-weight: normal;
 }
 
+/* 사진 누락 차량 리스트 아이템 강조 (붉은색 톤) */
+.list-item.missing-photo {
+  background: #ffebee; /* 연한 빨간색 배경 */
+  border: 1px solid #ef5350; /* 눈에 띄는 빨간 테두리 */
+}
+.list-item.missing-photo:hover {
+  background: #ffcdd2;
+}
+
+/* '📸촬영요망' 뱃지 스타일 */
+.photo-warning-badge {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 4px 10px;
+  font-size: clamp(14px, 2.5vh, 20px);
+  font-weight: 900;
+  color: white;
+  background-color: #d32f2f;
+  border-radius: 8px;
+  vertical-align: middle;
+  box-shadow: 0 2px 4px rgba(211, 47, 47, 0.3);
+}
+
+/* 시선을 끄는 깜빡임(Blink) 애니메이션 */
+@keyframes blink-warning {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.blink {
+  animation: blink-warning 1.5s infinite ease-in-out;
+}
+
 /* 모바일 전용 오버라이드 */
 @media (max-width: 768px) {
   body.dashboard-body {
