@@ -29,6 +29,38 @@
 }
 #searchInput { font-size: clamp(20px, 2.5vh, 30px); padding: 5px 15px; width: 100%; box-sizing: border-box; }
 
+/* checklist.css 에 추가 */
+.list-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.btn-single-add {
+  background: #e8f0fe;
+  color: #1a73e8;
+  border: 1px solid #cce0ff;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.btn-single-add:hover {
+  background: #1a73e8;
+  color: white;
+}
+
+.btn-single-add:active {
+  transform: scale(0.96);
+}
+
 /* -- 체크박스 및 액션 버튼 -- */
 .checkBox { 
   width: clamp(28px, 6vw, 34px); height: clamp(28px, 6vw, 34px);
@@ -99,6 +131,11 @@ body.high-contrast .list-item.unloaded .car-info { color: #777777 !important; }
 body.high-contrast .theme-toggle-btn { background: #222222 !important; border-color: #ffeb3b !important; color: #ffeb3b !important; }
 body.high-contrast .modal-content { background-color: #121212 !important; color: #ffffff !important; border: 1px solid #444444 !important; }
 body.high-contrast .edit-form-group input, body.high-contrast .edit-form-group select { background-color: #222222 !important; color: #ffffff !important; border: 1px solid #555555 !important; }
+body.high-contrast .btn-single-add {
+  background: #222222;
+  color: #00e676;
+  border: 1px solid #00e676;
+}
 
 /* 모바일 전용 폰트/패딩 최적화 */
 @media (max-width: 768px) {

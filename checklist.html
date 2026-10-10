@@ -18,8 +18,8 @@
   <!-- 헤더 영역 -->
   <header class="header-area">
     <div class="header-left">
-      <button type="button" id="addOpenBtn" class="header-btn" onclick="Checklist.openManualAddModal()">➕</button>
-      <button type="button" id="themeToggleBtn" class="header-btn theme-btn" onclick="Checklist.toggleHighContrastMode()">🌓</button>
+      <button type="button" id="addOpenBtn" class="header-btn" data-action="open-BatchCarManager">➕</button>
+      <button type="button" id="themeToggleBtn" class="header-btn theme-btn" data-action="theme-change">🌓</button>
     </div>
     
     <div class="title-wrap">
@@ -28,7 +28,7 @@
     </div>
     
     <div class="header-right">
-      <button type="button" id="qrOpenBtn" class="header-btn" onclick="Checklist.openQrModal()" title="모바일 접속 QR코드">
+      <button type="button" id="qrOpenBtn" class="header-btn" data-action="open-QR-modal" title="모바일 접속 QR코드">
         <svg viewBox="0 0 32 32">
           <path fill-rule="evenodd" d="M5 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm0 2h8v8H5V5z"/>
           <rect x="7" y="7" width="4" height="4" rx="1"/>
@@ -83,79 +83,50 @@
     <section class="middle-panel">
       <div class="card">
         <h2>🔎 차량 검색</h2>
-        <input type="text" id="searchInput" onkeyup="Checklist.filterList()" placeholder="차량번호를 입력하세요...">
+        <input type="text" id="searchInput" placeholder="차량번호를 입력하세요...">
       </div>
     </section>
 
     <!-- 실시간 리스트 -->
     <section class="bottom-panel">
-      <div class="card">
-        <h2 id="list-title">📋 실시간 차량 목록</h2>
+      <div class="card" id="car-list">
+        <div class="list-card-header">
+          <h2 id="list-title" style="margin: 0;">📋 실시간 차량 목록</h2>
+          <button type="button" 
+                  class="btn-single-add"
+                  data-action="open-SingleCarManager"
+                  data-mode="add"
+                  title="차량 1대 빠른 추가">
+            ➕ 차량 추가
+          </button>
+        </div>
         <div class="list-container" id="full-list"></div>
       </div>
     </section>
   </main>
 
-  <!-- [모달 1] 모바일 접속 QR 모달 -->
-  <div id="qrModal" class="modal-overlay" onclick="Checklist.closeQrModalOnOutside(event)">
-    <div class="modal-content qr-modal-box">
-      <h3>📱 모바일 접속 QR</h3>
-      <p id="qrInfo">스마트폰 카메라로 스캔하세요</p>
-      <p style="display: none; color: #dc2626;" id="qrErrDetail"></p>
-      <img id="qrImage" class="qr-img" src="" alt="접속 QR코드">
-      <button type="button" class="close-btn" onclick="Checklist.closeQrModal()">닫기</button>
-    </div>
-  </div>
+  <!-- 게스트용 QR 모달 -->
+  <div id="qrModal" class="modal-overlay"></div>
 
-  <!-- [모달 2] 차량 수동 추가 모달 -->
-  <div id="addCardModal" class="modal-overlay" onclick="Checklist.closeCardModalOnOutside(event)">
+  <!-- 복수 차량 관리 모달 -->
+  <div id="batchCarManager" class="modal-overlay">
     <div class="modal-content modal-content-wide">
       <div class="modal-header">
         <h2 style="margin: 0; font-size: 20px;">차량 추가</h2>
-        <button class="close-x" onclick="Checklist.closeCardModal()">×</button>
+        <button class="close-x" data-action="close-BatchCarManager">&times;</button>
       </div>
       
-      <div class="card-scroll-container" id="cardContainer">
-        <div class="btn-add-card" id="btnAddCard" onclick="Checklist.addNewCard()">+</div>
-      </div>
+      <div class="card-scroll-container" id="cardContainer"></div>
   
-      <div class="add-modal-footer">
-        <button type="button" class="btn-submit" onclick="Checklist.submitCardData()">추가하기</button>
-        <button type="button" class="btn-cancel" onclick="Checklist.closeCardModal()">취소</button>
+      <div class="batchCarManager-footer">
+        <button type="button" class="btn-submit" data-action="submit-cards">추가하기</button>
+        <button type="button" class="btn-cancel" data-action="close-BatchCarManager">취소</button>
       </div>
     </div>
   </div>
 
-  <!-- [모달 3] 차량 정보 수정 모달 -->
-  <div id="checklistEditModal" class="modal-overlay" onclick="Checklist.closeChecklistEditModalOnOutside(event)">
-    <div class="modal-content" style="max-width: 320px;">
-      <h3 style="margin-top: 0;">✏️ 차량 정보 수정</h3>
-      <input type="hidden" id="chkEditCarId">
-
-      <div class="edit-form-group">
-        <label>Wave</label>
-        <select id="chkEditWave">
-          <option value="1W">1W</option>
-          <option value="2W">2W</option>
-        </select>
-      </div>
-
-      <div class="edit-form-group">
-        <label>허브</label>
-        <select id="chkEditHub"></select>
-      </div>
-
-      <div class="edit-form-group">
-        <label>차량번호</label>
-        <input type="text" id="chkEditCarNum" placeholder="차량번호 (예: 경기80바6311)">
-      </div>
-
-      <div class="edit-modal-btns">
-        <button type="button" class="btn-edit-submit" onclick="Checklist.submitChecklistEdit()">수정 완료</button>
-        <button type="button" class="btn-edit-cancel" onclick="Checklist.closeChecklistEditModal()">취소</button>
-      </div>
-    </div>
-  </div>
+  <!-- 단일 차량 관리 모달 -->
+  <div id="singleCarManager" class="modal-overlay"></div>
 
   <!-- [공통 로딩 오버레이] UTILS.showLoading 전용 -->
   <div id="uploadOverlay" class="modal-overlay" style="z-index: 10001; flex-direction: column; background: rgba(0,0,0,0.75);">
@@ -167,9 +138,6 @@
     <script type="module">
       // 1. checklist.js가 export한 모든 함수를 Checklist라는 객체로 한 번에 가져옴
       import * as Checklist from './js/checklist.js';
-
-      // 2. HTML의 onclick="Checklist.xxx()"에서 쓸 수 있도록 window에 딱 한 번 등록
-      window.Checklist = Checklist;
 
       // 3. 앱 실행
       Checklist.init();

@@ -84,7 +84,7 @@ export function getTypeClassStr(type) {
   }
 }
 
-export function showToast({ message, duration, position = 'bottom'}) {
+export function showToast(message, { duration, position = 'bottom' } = {}) {
   // 1. 타입 및 위치별 기본값 설정
   const defaultDuration = position === 'top' ? 2800 : 2000;
   const finalDuration = duration ?? defaultDuration;
@@ -232,78 +232,6 @@ export function parseCarNumber(rawCarNum) {
   
   // 미배차, 배차예정 등 유효하지 않은 문자열은 공백 반환
   return "";
-}
-
-export async function submitCardData() {
-  const cards = document.querySelectorAll('.add-card');
-  const cardPayloads = [];
-
-  cards.forEach(card => {
-    const serverImageId = card.dataset.imageId;
-    const parentId = serverImageId || generateUniqueID();
-    const wave = card.querySelector('.wave-select').value;
-    const rows = card.querySelectorAll('.card-data-row');
-    const vehicles = [];
-
-    rows.forEach(row => {
-      let hub = row.querySelector('.row-hub-select').value;
-      const carNum = row.querySelector('.row-carnum-input').value.trim();
-      if (hub === "직접선택") hub = "";
-      if (hub !== "") vehicles.push({ hub, carNum });
-    });
-
-    if (vehicles.length > 0) {
-      cardPayloads.push({ wave, parentId, hasPhoto: Boolean(serverImageId), vehicles });
-    }
-  });
-
-  if (cardPayloads.length === 0) return alert("추가할 차량 데이터가 없습니다.");
-
-  showLoading("🚚 차량 추가 중...", "서버에 차량을 등록 중입니다.");
-
-  // [보안 우회 통일] 20개 단위 Chunk 분할 및 0.3초 지연 GET 전송
-  const CHUNK_SIZE = 20;
-  const chunkBatches = [];
-
-  cardPayloads.forEach(card => {
-    for (let i = 0; i < card.vehicles.length; i += CHUNK_SIZE) {
-      chunkBatches.push({
-        wave: card.wave,
-        parentId: card.parentId,
-        hasPhoto: (i === 0) ? card.hasPhoto : false,
-        vehicles: card.vehicles.slice(i, i + CHUNK_SIZE)
-      });
-    }
-  });
-
-  const totalBatches = chunkBatches.length;
-
-  try {
-    for (let i = 0; i < totalBatches; i++) {
-      const batch = chunkBatches[i];
-      showLoading(`🚚 차량 추가 중... (${i + 1}/${totalBatches})`, `서버에 데이터 전송 중입니다.`);
-
-      const encodedPayload = encodeURIComponent(JSON.stringify([batch]));
-      const response = await apiFetch(`${CONFIG.WORKER_URL}?action=addManualList&carinfo=${encodedPayload}`);
-      const result = await response.json();
-
-      if (result.status !== "success") throw new Error(result.message || "서버 저장 실패");
-
-      if (i < totalBatches - 1) {
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-    }
-
-    hideLoading();
-    showToast("✅ 모든 차량이 성공적으로 추가되었습니다!");
-    document.getElementById('cardContainer').innerHTML = '';
-    document.getElementById('addCardModal').classList.remove('active');
-    fetchData(false);
-
-  } catch (err) {
-    hideLoading();
-    alert(`추가 실패: ${err.message}`);
-  }
 }
 
 // 차량 추가/수정 모달에서 허브 선택 옵션 생성
