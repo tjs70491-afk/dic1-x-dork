@@ -61,12 +61,12 @@ export function setupEvents() {
 
         let endpoint = '';
         if (action === 'submit-add') {
-            if (!hubVal || hubVal === "직접선택") {
+            if (!hub || hub === "직접선택") {
                 alert("허브를 선택해주세요.");
                 return;
             }
             const inputData = encodeURIComponent(JSON.stringify([{
-                wave: state.carInfo.wave,
+                wave: wave,
                 parentId: "directly",
                 hasPhoto: false,
                 vehicles: [{ id: state.carInfo.carId, hub: hub, carNum: carNumber }]
