@@ -24,7 +24,7 @@ export const CONFIG = {
   SYNC: { 
     WORK_END_HOUR: 10, // 24시간 가동으로 전환시 폐지
     CHECKLIST_MS: 10000, // DO 연동 시 폐지
-    DASHBOARD_MS: 5000  // DO 연동 않고 5초 폴링 vs. DO 연동 하고 폐지
+    DASHBOARD_MS: 12000  // DO 연동 않고 5초 폴링 vs. DO 연동 하고 폐지
   },
   
   PERMISSIONS: {
